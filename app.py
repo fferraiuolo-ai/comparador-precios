@@ -35,13 +35,13 @@ def index():
 @app.route('/producto/<int:id>')
 def producto(id):
     prod = query_db('SELECT * FROM productos WHERE id = %s', [id], one=True)
-    precios = query_db('''
+    precios_raw = query_db('''
         SELECT tienda, precio, fecha 
         FROM precios 
         WHERE producto_id = %s
         ORDER BY fecha DESC
     ''', [id])
-    precios = [dict(p) for p in precios]
+    precios = [{**dict(p), 'fecha': str(p['fecha'])} for p in precios_raw]
     return render_template('producto.html', producto=prod, precios=precios)
 
 @app.route('/agregar', methods=['GET', 'POST'])
