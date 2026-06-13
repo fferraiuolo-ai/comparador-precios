@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalle de Producto</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1 { color: #333; }
+        .volver { display: inline-block; margin-bottom: 16px; color: #0066cc; text-decoration: none; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #0066cc; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        .precio { font-weight: bold; color: #28a745; }
+        .sin-precio { color: #aaa; }
+    </style>
+</head>
+<body>
+    <a href="/" class="volver">← Volver</a>
+    <h1>{{ producto['nombre'] }}</h1>
+
+    <div class="grid">
+        <div class="card">
+            <h2>Últimos precios</h2>
+            <table>
+                <tr>
+                    <th>Tienda</th>
+                    <th>Precio</th>
+                    <th>Fecha</th>
+                </tr>
+                {% set vistas = [] %}
+                {% for p in precios %}
+                    {% if p['tienda'] not in vistas %}
+                        {% set _ = vistas.append(p['tienda']) %}
+                        <tr>
+                            <td>{{ p['tienda'] }}</td>
+                            <td>
+                                {% if p['precio'] %}
+                                    <span class="precio">${{ "%.2f"|format(p['precio']) }}</span>
+                                {% else %}
+                                    <span class="sin-precio">No disponible</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ p['fecha'][:16] }}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Evolución de precios</h2>
+            <canvas id="grafico"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const precios = {{ precios | tojson }};
+        const tiendas = [...new Set(precios.map(p => p.tienda))];
+        const colores = ['#0066cc', '#28a745', '#dc3545', '#fd7e14'];
+
+        const datasets = tiendas.map((tienda, i) => {
+            const datos = precios
+                .filter(p => p.tienda === tienda && p.precio)
+                .reverse();
+            return {
+                label: tienda,
+                data: datos.map(p => ({ x: p.fecha, y: p.precio })),
+                borderColor: colores[i],
+                tension: 0.1,
+                fill: false
+            };
+        });
+
+        new Chart(document.getElementById('grafico'), {
+            type: 'line',
+            data: { datasets },
+            options: {
+                scales: {
+                    x: { type: 'category' },
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Comparador de Precios</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1 { color: #333; }
+        .btn { background: #0066cc; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; }
+        .btn-verde { background: #28a745; }
+        .btn-rojo { background: #dc3545; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+        th { background: #0066cc; color: white; padding: 12px; text-align: left; }
+        td { padding: 12px; border-bottom: 1px solid #eee; }
+        tr:hover { background: #f9f9f9; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Comparador de Precios</h1>
+        <div>
+            <a href="/agregar" class="btn">+ Agregar Producto</a>
+            <a href="/scraping" class="btn btn-verde" onclick="alert('Scraping iniciado, puede tardar unos minutos...')">Actualizar Precios</a>
+        </div>
+    </div>
+
+    {% if productos %}
+    <table>
+        <tr>
+            <th>Producto</th>
+            <th>Acciones</th>
+        </tr>
+        {% for p in productos %}
+        <tr>
+            <td>{{ p['nombre'] }}</td>
+            <td>
+                <a href="/producto/{{ p['id'] }}" class="btn">Ver precios</a>
+                <a href="/eliminar/{{ p['id'] }}" class="btn btn-rojo" onclick="return confirm('¿Seguro que querés eliminar este producto?')">Eliminar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>No hay productos cargados todavía. <a href="/agregar">Agregá el primero.</a></p>
+    {% endif %}
+</body>
+</html>
