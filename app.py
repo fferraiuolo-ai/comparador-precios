@@ -27,9 +27,23 @@ def execute_db(query, args=()):
     conn.commit()
     conn.close()
 
+def obtener_ultimos_precios(producto_id):
+    filas = query_db('''
+        SELECT DISTINCT ON (tienda) tienda, precio
+        FROM precios
+        WHERE producto_id = %s
+        ORDER BY tienda, fecha DESC
+    ''', [producto_id])
+    return {f['tienda']: f['precio'] for f in filas}
+
 @app.route('/')
 def index():
-    productos = query_db('SELECT * FROM productos')
+    productos_raw = query_db('SELECT * FROM productos ORDER BY nombre')
+    productos = []
+    for p in productos_raw:
+        prod = dict(p)
+        prod['precios'] = obtener_ultimos_precios(p['id'])
+        productos.append(prod)
     return render_template('index.html', productos=productos)
 
 @app.route('/producto/<int:id>')

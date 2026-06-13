@@ -9,11 +9,19 @@
         .btn { background: #0066cc; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; }
         .btn-verde { background: #28a745; }
         .btn-rojo { background: #dc3545; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
-        th { background: #0066cc; color: white; padding: 12px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #eee; }
-        tr:hover { background: #f9f9f9; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; font-size: 13px; }
+        th { background: #0066cc; color: white; padding: 10px 8px; text-align: center; }
+        th.left { text-align: left; }
+        td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: center; }
+        td.left { text-align: left; font-weight: bold; }
+        tr:hover { background: #f9f9f9; }
+        .precio { font-weight: bold; color: #333; }
+        .sin-precio { color: #aaa; font-size: 12px; }
+        .mas-caro { color: #dc3545; font-weight: bold; }
+        .mas-barato { color: #28a745; font-weight: bold; }
+        .igual { color: #888; }
+        .desviacion { font-size: 11px; }
     </style>
 </head>
 <body>
@@ -21,6 +29,7 @@
         <h1>Comparador de Precios</h1>
         <div>
             <a href="/agregar" class="btn">+ Agregar Producto</a>
+            &nbsp;
             <a href="/scraping" class="btn btn-verde" onclick="alert('Scraping iniciado, puede tardar unos minutos...')">Actualizar Precios</a>
         </div>
     </div>
@@ -28,16 +37,47 @@
     {% if productos %}
     <table>
         <tr>
-            <th>Producto</th>
-            <th>Acciones</th>
+            <th class="left">Producto</th>
+            <th>Puppis</th>
+            <th>Natural Life</th>
+            <th>Nutrican</th>
+            <th>Drovenort</th>
+            <th>vs NL</th>
+            <th>vs Nutrican</th>
+            <th>vs Drovenort</th>
+            <th></th>
         </tr>
         {% for p in productos %}
+        {% set precios = p['precios'] %}
         <tr>
-            <td>{{ p['nombre'] }}</td>
-            <td>
-                <a href="/producto/{{ p['id'] }}" class="btn">Ver precios</a>
-                <a href="/eliminar/{{ p['id'] }}" class="btn btn-rojo" onclick="return confirm('¿Seguro que querés eliminar este producto?')">Eliminar</a>
-            </td>
+            <td class="left"><a href="/producto/{{ p['id'] }}" style="color:#0066cc;text-decoration:none;">{{ p['nombre'] }}</a></td>
+
+            {% for tienda in ['puppis', 'naturallife', 'nutrican', 'drovenort'] %}
+                {% if precios[tienda] %}
+                    <td class="precio">${{ "{:,.0f}".format(precios[tienda]).replace(",", ".") }}</td>
+                {% else %}
+                    <td class="sin-precio">-</td>
+                {% endif %}
+            {% endfor %}
+
+            {% set puppis = precios['puppis'] %}
+            {% for tienda in ['naturallife', 'nutrican', 'drovenort'] %}
+                {% set competidor = precios[tienda] %}
+                {% if puppis and competidor %}
+                    {% set desv = ((puppis - competidor) / competidor * 100) %}
+                    {% if desv > 0 %}
+                        <td class="mas-caro desviacion">+{{ "%.1f"|format(desv) }}%</td>
+                    {% elif desv < 0 %}
+                        <td class="mas-barato desviacion">{{ "%.1f"|format(desv) }}%</td>
+                    {% else %}
+                        <td class="igual desviacion">0%</td>
+                    {% endif %}
+                {% else %}
+                    <td class="sin-precio">-</td>
+                {% endif %}
+            {% endfor %}
+
+            <td><a href="/eliminar/{{ p['id'] }}" class="btn btn-rojo" onclick="return confirm('¿Seguro?')">Eliminar</a></td>
         </tr>
         {% endfor %}
     </table>
