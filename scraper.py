@@ -1,7 +1,14 @@
 from playwright.sync_api import sync_playwright
-import sqlite3
+import psycopg2
+import os
 from datetime import datetime
 import re
+
+def get_conn():
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url:
+        return psycopg2.connect(db_url)
+    return psycopg2.connect('postgresql://comparador_db_d60h_user:bOEPAQ9cVlgJfc9uqWvUzbvWf6wLhJD3@dpg-d8mkph8js32c73cqeoqg-a.oregon-postgres.render.com/comparador_db_d60h')
 
 def limpiar_precio(texto):
     if not texto:
@@ -76,17 +83,17 @@ def scrape_precio_drovenort(page, url):
     return None
 
 def guardar_precio(producto_id, tienda, precio):
-    conn = sqlite3.connect('precios.db')
+    conn = get_conn()
     c = conn.cursor()
     c.execute(
-        'INSERT INTO precios (producto_id, tienda, precio, fecha) VALUES (?, ?, ?, ?)',
+        'INSERT INTO precios (producto_id, tienda, precio, fecha) VALUES (%s, %s, %s, %s)',
         (producto_id, tienda, precio, datetime.now())
     )
     conn.commit()
     conn.close()
 
 def obtener_productos():
-    conn = sqlite3.connect('precios.db')
+    conn = get_conn()
     c = conn.cursor()
     c.execute('SELECT * FROM productos')
     productos = c.fetchall()

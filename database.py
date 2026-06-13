@@ -1,12 +1,19 @@
-import sqlite3
+import psycopg2
+import os
+
+def get_conn():
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url:
+        return psycopg2.connect(db_url)
+    return psycopg2.connect('postgresql://comparador_db_d60h_user:bOEPAQ9cVlgJfc9uqWvUzbvWf6wLhJD3@dpg-d8mkph8js32c73cqeoqg-a.oregon-postgres.render.com/comparador_db_d60h')
 
 def init_db():
-    conn = sqlite3.connect('precios.db')
+    conn = get_conn()
     c = conn.cursor()
     
     c.execute('''
         CREATE TABLE IF NOT EXISTS productos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nombre TEXT NOT NULL,
             url_puppis TEXT,
             url_naturallife TEXT,
@@ -18,7 +25,7 @@ def init_db():
     
     c.execute('''
         CREATE TABLE IF NOT EXISTS precios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             producto_id INTEGER,
             tienda TEXT NOT NULL,
             precio REAL,
@@ -26,12 +33,6 @@ def init_db():
             FOREIGN KEY (producto_id) REFERENCES productos(id)
         )
     ''')
-
-    # Agregar columna si ya existe la tabla sin ese campo
-    try:
-        c.execute('ALTER TABLE productos ADD COLUMN variante_nutrican TEXT')
-    except:
-        pass
     
     conn.commit()
     conn.close()
