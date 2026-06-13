@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, jsonify import os
+from flask import Flask, render_template, request, jsonify
 import sqlite3
+import os
 from scraper import correr_scraping
 
 app = Flask(__name__)
@@ -67,4 +68,4 @@ def scraping():
     return jsonify({'status': 'ok', 'mensaje': 'Scraping completado'})
 
 if __name__ == '__main__':
-app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
