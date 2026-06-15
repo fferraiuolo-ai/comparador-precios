@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, jsonify
 import psycopg2
 import psycopg2.extras
 import os
-from scraper import correr_scraping
+import threading
+from scraper import correr_scraping_producto
 
 app = Flask(__name__)
 
@@ -61,9 +62,11 @@ def producto(id):
 @app.route('/agregar', methods=['GET', 'POST'])
 def agregar():
     if request.method == 'POST':
-        execute_db('''
+        conn = get_conn()
+        c = conn.cursor()
+        c.execute('''
             INSERT INTO productos (nombre, url_puppis, url_naturallife, url_nutrican, url_drovenort, variante_nutrican)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
         ''', (
             request.form['nombre'],
             request.form['url_puppis'],
@@ -72,6 +75,22 @@ def agregar():
             request.form['url_drovenort'],
             request.form['variante_nutrican'],
         ))
+        nuevo_id = c.fetchone()[0]
+        conn.commit()
+        conn.close()
+
+        # Correr scraping del nuevo producto en segundo plano
+        producto_data = (
+            nuevo_id,
+            request.form['nombre'],
+            request.form['url_puppis'],
+            request.form['url_naturallife'],
+            request.form['url_nutrican'],
+            request.form['url_drovenort'],
+            request.form['variante_nutrican'],
+        )
+        threading.Thread(target=correr_scraping_producto, args=(producto_data,)).start()
+
         return index()
     return render_template('agregar.html')
 

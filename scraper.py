@@ -100,6 +100,38 @@ def obtener_productos():
     conn.close()
     return productos
 
+def scrape_producto(page, prod):
+    id, nombre, url_puppis, url_naturallife, url_nutrican, url_drovenort, variante_nutrican = prod
+    print(f"Scrapeando: {nombre}")
+
+    if url_puppis:
+        precio = scrape_precio_vtex(page, url_puppis)
+        guardar_precio(id, 'puppis', precio)
+        print(f"  puppis: {precio}")
+
+    if url_naturallife:
+        precio = scrape_precio_naturallife(page, url_naturallife)
+        guardar_precio(id, 'naturallife', precio)
+        print(f"  naturallife: {precio}")
+
+    if url_nutrican:
+        precio = scrape_precio_meta(page, url_nutrican, variante=variante_nutrican)
+        guardar_precio(id, 'nutrican', precio)
+        print(f"  nutrican: {precio}")
+
+    if url_drovenort:
+        precio = scrape_precio_drovenort(page, url_drovenort)
+        guardar_precio(id, 'drovenort', precio)
+        print(f"  drovenort: {precio}")
+
+def correr_scraping_producto(prod):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        scrape_producto(page, prod)
+        browser.close()
+    print("Scraping completado")
+
 def correr_scraping():
     productos = obtener_productos()
     if not productos:
@@ -109,31 +141,8 @@ def correr_scraping():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-
         for prod in productos:
-            id, nombre, url_puppis, url_naturallife, url_nutrican, url_drovenort, variante_nutrican = prod
-            print(f"Scrapeando: {nombre}")
-
-            if url_puppis:
-                precio = scrape_precio_vtex(page, url_puppis)
-                guardar_precio(id, 'puppis', precio)
-                print(f"  puppis: {precio}")
-
-            if url_naturallife:
-                precio = scrape_precio_naturallife(page, url_naturallife)
-                guardar_precio(id, 'naturallife', precio)
-                print(f"  naturallife: {precio}")
-
-            if url_nutrican:
-                precio = scrape_precio_meta(page, url_nutrican, variante=variante_nutrican)
-                guardar_precio(id, 'nutrican', precio)
-                print(f"  nutrican: {precio}")
-
-            if url_drovenort:
-                precio = scrape_precio_drovenort(page, url_drovenort)
-                guardar_precio(id, 'drovenort', precio)
-                print(f"  drovenort: {precio}")
-
+            scrape_producto(page, prod)
         browser.close()
     print("Scraping completado")
 
