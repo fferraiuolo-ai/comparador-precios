@@ -2,41 +2,61 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Comparador de Precios</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-        h1 { color: #333; }
-        .btn { background: #0066cc; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; }
+        body { font-family: Arial, sans-serif; margin: 10px; background: #f5f5f5; }
+        h1 { color: #333; font-size: 20px; }
+        .btn { background: #0066cc; color: white; padding: 8px 12px; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; font-size: 13px; display: inline-block; margin: 2px; }
         .btn-verde { background: #28a745; }
         .btn-rojo { background: #dc3545; }
         .btn-naranja { background: #fd7e14; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; font-size: 13px; }
-        th { background: #0066cc; color: white; padding: 10px 8px; text-align: center; }
-        th.left { text-align: left; }
-        td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: center; }
-        td.left { text-align: left; font-weight: bold; }
-        tr:hover { background: #f9f9f9; }
-        .precio { font-weight: bold; color: #333; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px; }
+
+        /* Vista desktop */
+        .tabla-desktop { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; font-size: 13px; }
+        .tabla-desktop th { background: #0066cc; color: white; padding: 10px 8px; text-align: center; }
+        .tabla-desktop th.left { text-align: left; }
+        .tabla-desktop td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: center; }
+        .tabla-desktop td.left { text-align: left; font-weight: bold; }
+        .tabla-desktop tr:hover { background: #f9f9f9; }
+
+        /* Vista mobile */
+        .cards { display: none; }
+        .card { background: white; border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-nombre { font-weight: bold; font-size: 15px; margin-bottom: 10px; color: #0066cc; text-decoration: none; display: block; }
+        .card-precios { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+        .card-precio { background: #f5f5f5; border-radius: 4px; padding: 6px 8px; }
+        .card-precio .tienda { font-size: 11px; color: #888; }
+        .card-precio .valor { font-weight: bold; font-size: 14px; }
+        .card-desviaciones { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+        .card-desv { background: #f5f5f5; border-radius: 4px; padding: 6px 8px; text-align: center; }
+        .card-desv .tienda { font-size: 10px; color: #888; }
+        .card-desv .valor { font-weight: bold; font-size: 13px; }
+        .card-acciones { display: flex; gap: 8px; }
+        .mas-caro { color: #dc3545; }
+        .mas-barato { color: #28a745; }
         .sin-precio { color: #aaa; font-size: 12px; }
-        .mas-caro { color: #dc3545; font-weight: bold; }
-        .mas-barato { color: #28a745; font-weight: bold; }
-        .igual { color: #888; }
-        .desviacion { font-size: 11px; }
+
+        @media (max-width: 768px) {
+            .tabla-desktop { display: none; }
+            .cards { display: block; }
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Comparador de Precios</h1>
         <div>
-            <a href="/agregar" class="btn">+ Agregar Producto</a>
-            &nbsp;
-            <a href="/scraping" class="btn btn-verde" onclick="alert('Scraping iniciado, puede tardar unos minutos...')">Actualizar Precios</a>
+            <a href="/agregar" class="btn">+ Agregar</a>
+            <a href="/scraping" class="btn btn-verde" onclick="alert('Scraping iniciado, puede tardar unos minutos...')">Actualizar</a>
         </div>
     </div>
 
     {% if productos %}
-    <table>
+
+    <!-- Vista Desktop -->
+    <table class="tabla-desktop">
         <tr>
             <th class="left">Producto</th>
             <th>Puppis</th>
@@ -52,32 +72,29 @@
         {% set precios = p['precios'] %}
         <tr>
             <td class="left"><a href="/producto/{{ p['id'] }}" style="color:#0066cc;text-decoration:none;">{{ p['nombre'] }}</a></td>
-
             {% for tienda in ['puppis', 'naturallife', 'nutrican', 'drovenort'] %}
                 {% if precios[tienda] %}
-                    <td class="precio">${{ "{:,.0f}".format(precios[tienda]).replace(",", ".") }}</td>
+                    <td style="font-weight:bold;">${{ "{:,.0f}".format(precios[tienda]).replace(",", ".") }}</td>
                 {% else %}
                     <td class="sin-precio">-</td>
                 {% endif %}
             {% endfor %}
-
             {% set puppis = precios['puppis'] %}
             {% for tienda in ['naturallife', 'nutrican', 'drovenort'] %}
                 {% set competidor = precios[tienda] %}
                 {% if puppis and competidor %}
                     {% set desv = ((puppis - competidor) / competidor * 100) %}
                     {% if desv > 0 %}
-                        <td class="mas-caro desviacion">+{{ "%.1f"|format(desv) }}%</td>
+                        <td class="mas-caro" style="font-size:11px;">+{{ "%.1f"|format(desv) }}%</td>
                     {% elif desv < 0 %}
-                        <td class="mas-barato desviacion">{{ "%.1f"|format(desv) }}%</td>
+                        <td class="mas-barato" style="font-size:11px;">{{ "%.1f"|format(desv) }}%</td>
                     {% else %}
-                        <td class="igual desviacion">0%</td>
+                        <td style="color:#888;font-size:11px;">0%</td>
                     {% endif %}
                 {% else %}
                     <td class="sin-precio">-</td>
                 {% endif %}
             {% endfor %}
-
             <td>
                 <a href="/editar/{{ p['id'] }}" class="btn btn-naranja">Editar</a>
                 <a href="/eliminar/{{ p['id'] }}" class="btn btn-rojo" onclick="return confirm('¿Seguro?')">Eliminar</a>
@@ -85,6 +102,54 @@
         </tr>
         {% endfor %}
     </table>
+
+    <!-- Vista Mobile -->
+    <div class="cards">
+        {% for p in productos %}
+        {% set precios = p['precios'] %}
+        <div class="card">
+            <a href="/producto/{{ p['id'] }}" class="card-nombre">{{ p['nombre'] }}</a>
+            <div class="card-precios">
+                {% for tienda, label in [('puppis','Puppis'),('naturallife','Natural Life'),('nutrican','Nutrican'),('drovenort','Drovenort')] %}
+                <div class="card-precio">
+                    <div class="tienda">{{ label }}</div>
+                    {% if precios[tienda] %}
+                        <div class="valor">${{ "{:,.0f}".format(precios[tienda]).replace(",", ".") }}</div>
+                    {% else %}
+                        <div class="valor sin-precio">-</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% set puppis = precios['puppis'] %}
+            <div class="card-desviaciones">
+                {% for tienda, label in [('naturallife','vs NL'),('nutrican','vs Nutrican'),('drovenort','vs Drovenort')] %}
+                <div class="card-desv">
+                    <div class="tienda">{{ label }}</div>
+                    {% set competidor = precios[tienda] %}
+                    {% if puppis and competidor %}
+                        {% set desv = ((puppis - competidor) / competidor * 100) %}
+                        {% if desv > 0 %}
+                            <div class="valor mas-caro">+{{ "%.1f"|format(desv) }}%</div>
+                        {% elif desv < 0 %}
+                            <div class="valor mas-barato">{{ "%.1f"|format(desv) }}%</div>
+                        {% else %}
+                            <div class="valor" style="color:#888;">0%</div>
+                        {% endif %}
+                    {% else %}
+                        <div class="valor sin-precio">-</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-acciones">
+                <a href="/editar/{{ p['id'] }}" class="btn btn-naranja">Editar</a>
+                <a href="/eliminar/{{ p['id'] }}" class="btn btn-rojo" onclick="return confirm('¿Seguro?')">Eliminar</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
     {% else %}
     <p>No hay productos cargados todavía. <a href="/agregar">Agregá el primero.</a></p>
     {% endif %}
