@@ -1,9 +1,9 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 import psycopg2
 import psycopg2.extras
 import os
 import threading
-from scraper import correr_scraping_producto
+from scraper import correr_scraping, correr_scraping_producto
 
 app = Flask(__name__)
 
@@ -79,7 +79,6 @@ def agregar():
         conn.commit()
         conn.close()
 
-        # Correr scraping del nuevo producto en segundo plano
         producto_data = (
             nuevo_id,
             request.form['nombre'],
@@ -90,15 +89,33 @@ def agregar():
             request.form['variante_nutrican'],
         )
         threading.Thread(target=correr_scraping_producto, args=(producto_data,)).start()
-
-        return index()
+        return redirect(url_for('index'))
     return render_template('agregar.html')
+
+@app.route('/editar/<int:id>', methods=['GET', 'POST'])
+def editar(id):
+    if request.method == 'POST':
+        execute_db('''
+            UPDATE productos SET nombre=%s, url_puppis=%s, url_naturallife=%s, url_nutrican=%s, url_drovenort=%s, variante_nutrican=%s
+            WHERE id=%s
+        ''', (
+            request.form['nombre'],
+            request.form['url_puppis'],
+            request.form['url_naturallife'],
+            request.form['url_nutrican'],
+            request.form['url_drovenort'],
+            request.form['variante_nutrican'],
+            id,
+        ))
+        return redirect(url_for('index'))
+    prod = query_db('SELECT * FROM productos WHERE id = %s', [id], one=True)
+    return render_template('editar.html', producto=prod)
 
 @app.route('/eliminar/<int:id>')
 def eliminar(id):
     execute_db('DELETE FROM precios WHERE producto_id = %s', [id])
     execute_db('DELETE FROM productos WHERE id = %s', [id])
-    return index()
+    return redirect(url_for('index'))
 
 @app.route('/scraping')
 def scraping():
