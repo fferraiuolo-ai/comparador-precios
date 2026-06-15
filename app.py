@@ -1,11 +1,29 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 import psycopg2
 import psycopg2.extras
 import os
 import threading
 from scraper import correr_scraping, correr_scraping_producto
+from functools import wraps
 
 app = Flask(__name__)
+app.secret_key = 'puppis_comparador_2026'
+
+USUARIOS = {
+    'federico':     'puppis2026',
+    'matias':       'puppis2026',
+    'florencia':    'puppis2026',
+    'juanignacio':  'puppis2026',
+    'joaquin':      'puppis2026',
+}
+
+def login_requerido(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('usuario'):
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
 
 def get_conn():
     db_url = os.environ.get('DATABASE_URL')
@@ -37,6 +55,23 @@ def obtener_ultimos_precios(producto_id):
     ''', [producto_id])
     return {f['tienda']: f['precio'] for f in filas}
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        usuario = request.form['usuario'].lower().strip()
+        password = request.form['password']
+        if usuario in USUARIOS and USUARIOS[usuario] == password:
+            session['usuario'] = usuario
+            return redirect(url_for('index'))
+        error = 'Usuario o contraseña incorrectos'
+    return render_template('login.html', error=error)
+
+@app.route('/logout')
+def logout():
+    session.pop('usuario', None)
+    return redirect(url_for('index'))
+
 @app.route('/')
 def index():
     productos_raw = query_db('SELECT * FROM productos ORDER BY nombre')
@@ -45,7 +80,8 @@ def index():
         prod = dict(p)
         prod['precios'] = obtener_ultimos_precios(p['id'])
         productos.append(prod)
-    return render_template('index.html', productos=productos)
+    usuario = session.get('usuario')
+    return render_template('index.html', productos=productos, usuario=usuario)
 
 @app.route('/producto/<int:id>')
 def producto(id):
@@ -60,6 +96,7 @@ def producto(id):
     return render_template('producto.html', producto=prod, precios=precios)
 
 @app.route('/agregar', methods=['GET', 'POST'])
+@login_requerido
 def agregar():
     if request.method == 'POST':
         conn = get_conn()
@@ -93,6 +130,7 @@ def agregar():
     return render_template('agregar.html')
 
 @app.route('/editar/<int:id>', methods=['GET', 'POST'])
+@login_requerido
 def editar(id):
     if request.method == 'POST':
         execute_db('''
@@ -112,12 +150,14 @@ def editar(id):
     return render_template('editar.html', producto=prod)
 
 @app.route('/eliminar/<int:id>')
+@login_requerido
 def eliminar(id):
     execute_db('DELETE FROM precios WHERE producto_id = %s', [id])
     execute_db('DELETE FROM productos WHERE id = %s', [id])
     return redirect(url_for('index'))
 
 @app.route('/scraping')
+@login_requerido
 def scraping():
     correr_scraping()
     return jsonify({'status': 'ok', 'mensaje': 'Scraping completado'})

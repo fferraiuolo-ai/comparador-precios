@@ -12,16 +12,12 @@
         .btn-rojo { background: #dc3545; }
         .btn-naranja { background: #fd7e14; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px; }
-
-        /* Vista desktop */
         .tabla-desktop { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; font-size: 13px; }
         .tabla-desktop th { background: #0066cc; color: white; padding: 10px 8px; text-align: center; }
         .tabla-desktop th.left { text-align: left; }
         .tabla-desktop td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: center; }
         .tabla-desktop td.left { text-align: left; font-weight: bold; }
         .tabla-desktop tr:hover { background: #f9f9f9; }
-
-        /* Vista mobile */
         .cards { display: none; }
         .card { background: white; border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .card-nombre { font-weight: bold; font-size: 15px; margin-bottom: 10px; color: #0066cc; text-decoration: none; display: block; }
@@ -37,7 +33,6 @@
         .mas-caro { color: #dc3545; }
         .mas-barato { color: #28a745; }
         .sin-precio { color: #aaa; font-size: 12px; }
-
         @media (max-width: 768px) {
             .tabla-desktop { display: none; }
             .cards { display: block; }
@@ -48,8 +43,13 @@
     <div class="header">
         <h1>Comparador de Precios</h1>
         <div>
-            <a href="/agregar" class="btn">+ Agregar</a>
-            <a href="/scraping" class="btn btn-verde" onclick="alert('Scraping iniciado, puede tardar unos minutos...')">Actualizar</a>
+            {% if usuario %}
+                <a href="/agregar" class="btn">+ Agregar</a>
+                <a href="/scraping" class="btn btn-verde" onclick="alert('Scraping iniciado, puede tardar unos minutos...')">Actualizar</a>
+                <a href="/logout" class="btn" style="background:#6c757d;">Salir ({{ usuario }})</a>
+            {% else %}
+                <a href="/login" class="btn">Iniciar sesión</a>
+            {% endif %}
         </div>
     </div>
 
@@ -66,7 +66,7 @@
             <th>vs NL</th>
             <th>vs Nutrican</th>
             <th>vs Drovenort</th>
-            <th></th>
+            {% if usuario %}<th></th>{% endif %}
         </tr>
         {% for p in productos %}
         {% set precios = p['precios'] %}
@@ -95,10 +95,12 @@
                     <td class="sin-precio">-</td>
                 {% endif %}
             {% endfor %}
+            {% if usuario %}
             <td>
                 <a href="/editar/{{ p['id'] }}" class="btn btn-naranja">Editar</a>
                 <a href="/eliminar/{{ p['id'] }}" class="btn btn-rojo" onclick="return confirm('¿Seguro?')">Eliminar</a>
             </td>
+            {% endif %}
         </tr>
         {% endfor %}
     </table>
@@ -142,16 +144,18 @@
                 </div>
                 {% endfor %}
             </div>
+            {% if usuario %}
             <div class="card-acciones">
                 <a href="/editar/{{ p['id'] }}" class="btn btn-naranja">Editar</a>
                 <a href="/eliminar/{{ p['id'] }}" class="btn btn-rojo" onclick="return confirm('¿Seguro?')">Eliminar</a>
             </div>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
 
     {% else %}
-    <p>No hay productos cargados todavía. <a href="/agregar">Agregá el primero.</a></p>
+    <p>No hay productos cargados todavía. {% if usuario %}<a href="/agregar">Agregá el primero.</a>{% endif %}</p>
     {% endif %}
 </body>
 </html>
