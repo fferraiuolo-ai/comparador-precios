@@ -3,6 +3,7 @@ import psycopg2
 import os
 from datetime import datetime
 import re
+from alertas import enviar_alerta
 
 def get_conn():
     db_url = os.environ.get('DATABASE_URL')
@@ -82,6 +83,18 @@ def scrape_precio_drovenort(page, url):
         print(f"  Error: {e}")
     return None
 
+def obtener_ultimo_precio(producto_id, tienda):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute('''
+        SELECT precio FROM precios
+        WHERE producto_id = %s AND tienda = %s
+        ORDER BY fecha DESC LIMIT 1
+    ''', (producto_id, tienda))
+    resultado = c.fetchone()
+    conn.close()
+    return resultado[0] if resultado else None
+
 def guardar_precio(producto_id, tienda, precio):
     conn = get_conn()
     c = conn.cursor()
@@ -100,28 +113,39 @@ def obtener_productos():
     conn.close()
     return productos
 
+def procesar_precio(producto_id, nombre, tienda, precio_nuevo):
+    if precio_nuevo is None:
+        guardar_precio(producto_id, tienda, precio_nuevo)
+        return
+
+    precio_anterior = obtener_ultimo_precio(producto_id, tienda)
+    guardar_precio(producto_id, tienda, precio_nuevo)
+
+    if precio_anterior and precio_anterior != precio_nuevo:
+        enviar_alerta(nombre, tienda, precio_anterior, precio_nuevo)
+
 def scrape_producto(page, prod):
     id, nombre, url_puppis, url_naturallife, url_nutrican, url_drovenort, variante_nutrican = prod
     print(f"Scrapeando: {nombre}")
 
     if url_puppis:
         precio = scrape_precio_vtex(page, url_puppis)
-        guardar_precio(id, 'puppis', precio)
+        procesar_precio(id, nombre, 'puppis', precio)
         print(f"  puppis: {precio}")
 
     if url_naturallife:
         precio = scrape_precio_naturallife(page, url_naturallife)
-        guardar_precio(id, 'naturallife', precio)
+        procesar_precio(id, nombre, 'naturallife', precio)
         print(f"  naturallife: {precio}")
 
     if url_nutrican:
         precio = scrape_precio_meta(page, url_nutrican, variante=variante_nutrican)
-        guardar_precio(id, 'nutrican', precio)
+        procesar_precio(id, nombre, 'nutrican', precio)
         print(f"  nutrican: {precio}")
 
     if url_drovenort:
         precio = scrape_precio_drovenort(page, url_drovenort)
-        guardar_precio(id, 'drovenort', precio)
+        procesar_precio(id, nombre, 'drovenort', precio)
         print(f"  drovenort: {precio}")
 
 def correr_scraping_producto(prod):
