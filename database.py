@@ -37,8 +37,9 @@ def init_db():
 
     try:
         c.execute('ALTER TABLE precios ADD COLUMN precio_descuento REAL')
+        conn.commit()
     except:
-        pass
+        conn.rollback()
 
     c.execute('''
         CREATE TABLE IF NOT EXISTS scraping_log (
