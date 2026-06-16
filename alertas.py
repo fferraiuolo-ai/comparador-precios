@@ -2,14 +2,14 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-GMAIL_USER = 'tu-email@gmail.com'
-GMAIL_PASSWORD = 'cmqv zzlq syzy qroe'
-EMAIL_DESTINO = 'fferraiuolo@puppis.com.ar'
+GMAIL_USER = 'fferraiuolo@puppis.com.ar'
+GMAIL_PASSWORD = 'lehd cues jtea zioe'
+EMAILS_DESTINO = ['fferraiuolo@puppis.com.ar', 'comercial@puppis.com.ar']
 
 def enviar_mail(asunto, cuerpo):
     msg = MIMEMultipart()
     msg['From'] = GMAIL_USER
-    msg['To'] = EMAIL_DESTINO
+    msg['To'] = ', '.join(EMAILS_DESTINO)
     msg['Subject'] = asunto
     msg.attach(MIMEText(cuerpo, 'plain'))
 
@@ -17,7 +17,7 @@ def enviar_mail(asunto, cuerpo):
         servidor = smtplib.SMTP('smtp.gmail.com', 587)
         servidor.starttls()
         servidor.login(GMAIL_USER, GMAIL_PASSWORD.replace(' ', ''))
-        servidor.sendmail(GMAIL_USER, EMAIL_DESTINO, msg.as_string())
+        servidor.sendmail(GMAIL_USER, EMAILS_DESTINO, msg.as_string())
         servidor.quit()
         print(f"  Mail enviado: {asunto}")
     except Exception as e:
