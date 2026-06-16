@@ -81,7 +81,8 @@ def index():
         prod['precios'] = obtener_ultimos_precios(p['id'])
         productos.append(prod)
     usuario = session.get('usuario')
-    return render_template('index.html', productos=productos, usuario=usuario)
+    ultimo_log = query_db('SELECT * FROM scraping_log ORDER BY fecha DESC LIMIT 1', one=True)
+    return render_template('index.html', productos=productos, usuario=usuario, ultimo_log=ultimo_log)
 
 @app.route('/producto/<int:id>')
 def producto(id):

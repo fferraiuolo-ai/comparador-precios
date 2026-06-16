@@ -6,6 +6,8 @@
     <title>Comparador de Precios</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 10px; background: #f5f5f5; }
+        .alerta-error { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px 14px; margin-bottom: 12px; color: #856404; font-size: 13px; }
+        .alerta-error strong { color: #dc3545; }
         h1 { color: #333; font-size: 20px; }
         .btn { background: #0066cc; color: white; padding: 8px 12px; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; font-size: 13px; display: inline-block; margin: 2px; }
         .btn-verde { background: #28a745; }
@@ -43,6 +45,13 @@
     </style>
 </head>
 <body>
+    {% if ultimo_log and ultimo_log['estado'] == 'error' %}
+    <div class="alerta-error">
+        ⚠️ <strong>El último scraping tuvo errores:</strong> {{ ultimo_log['detalle'] }}<br>
+        <small>Fecha: {{ ultimo_log['fecha'] }}</small>
+    </div>
+    {% endif %}
+
     <div class="header">
         <h1>Comparador de Precios</h1>
         <div>

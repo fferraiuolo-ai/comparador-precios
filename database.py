@@ -39,7 +39,16 @@ def init_db():
         c.execute('ALTER TABLE precios ADD COLUMN precio_descuento REAL')
     except:
         pass
-    
+
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS scraping_log (
+            id SERIAL PRIMARY KEY,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            estado TEXT NOT NULL,
+            detalle TEXT
+        )
+    ''')
+
     conn.commit()
     conn.close()
     print("Base de datos inicializada correctamente")

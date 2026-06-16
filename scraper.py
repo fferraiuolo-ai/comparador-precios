@@ -139,16 +139,27 @@ def obtener_productos():
     conn.close()
     return productos
 
+errores_scraping = []
+
 def procesar_precio(producto_id, nombre, tienda, precio_nuevo, precio_descuento, url):
     precio_anterior = obtener_ultimo_precio(producto_id, tienda)
-    
+
     if precio_nuevo is None:
+        msg = f"URL rota: {nombre} en {tienda}"
+        errores_scraping.append(msg)
         if precio_anterior is not None:
             enviar_alerta_url_rota(nombre, tienda, url)
     else:
         guardar_precio(producto_id, tienda, precio_nuevo, precio_descuento)
         if precio_anterior and precio_anterior != precio_nuevo:
             enviar_alerta(nombre, tienda, precio_anterior, precio_nuevo)
+
+def guardar_log_scraping(estado, detalle=None):
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute('INSERT INTO scraping_log (fecha, estado, detalle) VALUES (NOW(), %s, %s)', (estado, detalle))
+    conn.commit()
+    conn.close()
 
 def scrape_producto(page, prod):
     id, nombre, url_puppis, url_naturallife, url_nutrican, url_drovenort, variante_nutrican = prod
@@ -183,6 +194,9 @@ def correr_scraping_producto(prod):
     print("Scraping completado")
 
 def correr_scraping():
+    global errores_scraping
+    errores_scraping = []
+
     productos = obtener_productos()
     if not productos:
         print("No hay productos cargados todavía")
@@ -194,6 +208,13 @@ def correr_scraping():
         for prod in productos:
             scrape_producto(page, prod)
         browser.close()
+
+    if errores_scraping:
+        detalle = '\n'.join(errores_scraping)
+        guardar_log_scraping('error', detalle)
+    else:
+        guardar_log_scraping('ok')
+
     print("Scraping completado")
 
 if __name__ == '__main__':
