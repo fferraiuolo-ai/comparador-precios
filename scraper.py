@@ -14,7 +14,13 @@ def get_conn():
 def limpiar_precio(texto):
     if not texto:
         return None
-    numeros = re.sub(r'[^\d]', '', texto)
+    texto = texto.strip()
+    # Formato argentino: puntos como miles, coma como decimal (ej: $119.445,50)
+    if re.search(r'\d\.\d{3}', texto):
+        texto = texto.replace('.', '').replace(',', '.')
+    else:
+        texto = texto.replace(',', '')
+    numeros = re.sub(r'[^\d.]', '', texto)
     try:
         val = float(numeros)
         return val if val > 100 else None
@@ -79,9 +85,14 @@ def scrape_precio_meta(page, url, variante=None):
                     page.wait_for_timeout(2000)
                     break
         elemento = page.query_selector('.js-price-display')
+        precio_lista = None
+        precio_desc = None
         if elemento:
-            texto = elemento.inner_text().strip()
-            return limpiar_precio(texto), None
+            precio_lista = limpiar_precio(elemento.inner_text().strip())
+        elem_desc = page.query_selector('.js-payment-discount-price-product-container')
+        if elem_desc:
+            precio_desc = limpiar_precio(elem_desc.inner_text().strip())
+        return precio_lista, precio_desc
     except Exception as e:
         print(f"  Error: {e}")
     return None, None
