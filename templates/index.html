@@ -15,9 +15,11 @@
         .tabla-desktop { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; font-size: 13px; }
         .tabla-desktop th { background: #0066cc; color: white; padding: 10px 8px; text-align: center; }
         .tabla-desktop th.left { text-align: left; }
-        .tabla-desktop td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: center; }
+        .tabla-desktop td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: center; vertical-align: middle; }
         .tabla-desktop td.left { text-align: left; font-weight: bold; }
         .tabla-desktop tr:hover { background: #f9f9f9; }
+        .precio-lista { font-weight: bold; color: #333; display: block; }
+        .precio-desc { font-size: 11px; color: #28a745; display: block; }
         .cards { display: none; }
         .card { background: white; border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .card-nombre { font-weight: bold; font-size: 15px; margin-bottom: 10px; color: #0066cc; text-decoration: none; display: block; }
@@ -25,6 +27,7 @@
         .card-precio { background: #f5f5f5; border-radius: 4px; padding: 6px 8px; }
         .card-precio .tienda { font-size: 11px; color: #888; }
         .card-precio .valor { font-weight: bold; font-size: 14px; }
+        .card-precio .valor-desc { font-size: 11px; color: #28a745; }
         .card-desviaciones { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px; }
         .card-desv { background: #f5f5f5; border-radius: 4px; padding: 6px 8px; text-align: center; }
         .card-desv .tienda { font-size: 10px; color: #888; }
@@ -60,7 +63,7 @@
         <tr>
             <th class="left">Producto</th>
             <th>Puppis</th>
-            <th>Natural Life</th>
+            <th>Natural Life<br><small>lista / débito</small></th>
             <th>Nutrican</th>
             <th>Drovenort</th>
             <th>vs NL</th>
@@ -72,16 +75,27 @@
         {% set precios = p['precios'] %}
         <tr>
             <td class="left"><a href="/producto/{{ p['id'] }}" style="color:#0066cc;text-decoration:none;">{{ p['nombre'] }}</a></td>
+
             {% for tienda in ['puppis', 'naturallife', 'nutrican', 'drovenort'] %}
-                {% if precios[tienda] %}
-                    <td style="font-weight:bold;">${{ "{:,.0f}".format(precios[tienda]).replace(",", ".") }}</td>
+                {% set datos = precios.get(tienda, {}) %}
+                {% set precio = datos.get('precio') %}
+                {% set desc = datos.get('descuento') %}
+                {% if precio %}
+                    <td>
+                        <span class="precio-lista">${{ "{:,.0f}".format(precio).replace(",", ".") }}</span>
+                        {% if desc %}
+                            <span class="precio-desc">${{ "{:,.0f}".format(desc).replace(",", ".") }} débito</span>
+                        {% endif %}
+                    </td>
                 {% else %}
                     <td class="sin-precio">-</td>
                 {% endif %}
             {% endfor %}
-            {% set puppis = precios['puppis'] %}
+
+            {% set puppis = precios.get('puppis', {}).get('precio') %}
             {% for tienda in ['naturallife', 'nutrican', 'drovenort'] %}
-                {% set competidor = precios[tienda] %}
+                {% set datos = precios.get(tienda, {}) %}
+                {% set competidor = datos.get('descuento') or datos.get('precio') %}
                 {% if puppis and competidor %}
                     {% set desv = ((puppis - competidor) / competidor * 100) %}
                     {% if desv > 0 %}
@@ -95,6 +109,7 @@
                     <td class="sin-precio">-</td>
                 {% endif %}
             {% endfor %}
+
             {% if usuario %}
             <td>
                 <a href="/editar/{{ p['id'] }}" class="btn btn-naranja">Editar</a>
@@ -113,22 +128,29 @@
             <a href="/producto/{{ p['id'] }}" class="card-nombre">{{ p['nombre'] }}</a>
             <div class="card-precios">
                 {% for tienda, label in [('puppis','Puppis'),('naturallife','Natural Life'),('nutrican','Nutrican'),('drovenort','Drovenort')] %}
+                {% set datos = precios.get(tienda, {}) %}
+                {% set precio = datos.get('precio') %}
+                {% set desc = datos.get('descuento') %}
                 <div class="card-precio">
                     <div class="tienda">{{ label }}</div>
-                    {% if precios[tienda] %}
-                        <div class="valor">${{ "{:,.0f}".format(precios[tienda]).replace(",", ".") }}</div>
+                    {% if precio %}
+                        <div class="valor">${{ "{:,.0f}".format(precio).replace(",", ".") }}</div>
+                        {% if desc %}
+                            <div class="valor-desc">${{ "{:,.0f}".format(desc).replace(",", ".") }} déb.</div>
+                        {% endif %}
                     {% else %}
                         <div class="valor sin-precio">-</div>
                     {% endif %}
                 </div>
                 {% endfor %}
             </div>
-            {% set puppis = precios['puppis'] %}
+            {% set puppis = precios.get('puppis', {}).get('precio') %}
             <div class="card-desviaciones">
                 {% for tienda, label in [('naturallife','vs NL'),('nutrican','vs Nutrican'),('drovenort','vs Drovenort')] %}
                 <div class="card-desv">
                     <div class="tienda">{{ label }}</div>
-                    {% set competidor = precios[tienda] %}
+                    {% set datos = precios.get(tienda, {}) %}
+                    {% set competidor = datos.get('descuento') or datos.get('precio') %}
                     {% if puppis and competidor %}
                         {% set desv = ((puppis - competidor) / competidor * 100) %}
                         {% if desv > 0 %}
