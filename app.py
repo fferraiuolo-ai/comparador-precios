@@ -163,4 +163,4 @@ def scraping():
     return jsonify({'status': 'ok', 'mensaje': 'Scraping completado'})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=
+    app.run(host='0.0.0.0', port=5000, debug=True)
