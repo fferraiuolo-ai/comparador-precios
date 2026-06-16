@@ -21,6 +21,52 @@ def limpiar_precio(texto):
     except:
         return None
 
+def scrape_precio_vtex(page, url):
+    try:
+        page.goto(url, timeout=30000)
+        page.wait_for_load_state('networkidle', timeout=15000)
+        elemento = page.query_selector('[class*="sellingPrice"]')
+        if elemento:
+            texto = elemento.inner_text().strip()
+            return limpiar_precio(texto), None
+    except Exception as e:
+        print(f"  Error: {e}")
+    return None, None
+
+def scrape_precio_naturallife(page, url):
+    try:
+        page.goto(url, timeout=30000)
+        page.wait_for_load_state('networkidle', timeout=15000)
+        precio_lista = None
+        precio_descuento = None
+
+        elementos = page.query_selector_all('[class*="price"]')
+        for el in elementos:
+            clase = el.get_attribute('class') or ''
+            if 'flexRow--product-prices' in clase:
+                texto = el.inner_text().strip()
+                lineas = texto.split('\n')
+                for i, linea in enumerate(lineas):
+                    linea = linea.strip()
+                    if 'Lista' in linea:
+                        for j in range(i+1, min(i+3, len(lineas))):
+                            p = limpiar_precio(lineas[j])
+                            if p:
+                                precio_lista = p
+                                break
+                    if 'Débito' in linea or 'Credito' in linea or 'Crédito' in linea:
+                        for j in range(i+1, min(i+3, len(lineas))):
+                            p = limpiar_precio(lineas[j])
+                            if p:
+                                precio_descuento = p
+                                break
+                break
+
+        return precio_lista, precio_descuento
+    except Exception as e:
+        print(f"  Error: {e}")
+    return None, None
+
 def scrape_precio_meta(page, url, variante=None):
     try:
         page.goto(url, timeout=30000)
@@ -35,41 +81,10 @@ def scrape_precio_meta(page, url, variante=None):
         elemento = page.query_selector('.js-price-display')
         if elemento:
             texto = elemento.inner_text().strip()
-            return limpiar_precio(texto)
+            return limpiar_precio(texto), None
     except Exception as e:
         print(f"  Error: {e}")
-    return None
-
-def scrape_precio_vtex(page, url):
-    try:
-        page.goto(url, timeout=30000)
-        page.wait_for_load_state('networkidle', timeout=15000)
-        elemento = page.query_selector('[class*="sellingPrice"]')
-        if elemento:
-            texto = elemento.inner_text().strip()
-            return limpiar_precio(texto)
-    except Exception as e:
-        print(f"  Error: {e}")
-    return None
-
-def scrape_precio_naturallife(page, url):
-    try:
-        page.goto(url, timeout=30000)
-        page.wait_for_load_state('networkidle', timeout=15000)
-        elementos = page.query_selector_all('[class*="price"]')
-        for el in elementos:
-            clase = el.get_attribute('class') or ''
-            if 'flexRow--product-prices' in clase:
-                texto = el.inner_text().strip()
-                lineas = texto.split('\n')
-                for linea in lineas:
-                    if '$' in linea and 'impuesto' not in linea.lower() and 'lista' not in linea.lower():
-                        precio = limpiar_precio(linea)
-                        if precio:
-                            return precio
-    except Exception as e:
-        print(f"  Error: {e}")
-    return None
+    return None, None
 
 def scrape_precio_drovenort(page, url):
     try:
@@ -78,10 +93,10 @@ def scrape_precio_drovenort(page, url):
         elemento = page.query_selector('.text-no-wrap.mr-2.price')
         if elemento:
             texto = elemento.inner_text().strip()
-            return limpiar_precio(texto)
+            return limpiar_precio(texto), None
     except Exception as e:
         print(f"  Error: {e}")
-    return None
+    return None, None
 
 def obtener_ultimo_precio(producto_id, tienda):
     conn = get_conn()
@@ -95,12 +110,12 @@ def obtener_ultimo_precio(producto_id, tienda):
     conn.close()
     return resultado[0] if resultado else None
 
-def guardar_precio(producto_id, tienda, precio):
+def guardar_precio(producto_id, tienda, precio, precio_descuento=None):
     conn = get_conn()
     c = conn.cursor()
     c.execute(
-        'INSERT INTO precios (producto_id, tienda, precio, fecha) VALUES (%s, %s, %s, %s)',
-        (producto_id, tienda, precio, datetime.now())
+        'INSERT INTO precios (producto_id, tienda, precio, precio_descuento, fecha) VALUES (%s, %s, %s, %s, %s)',
+        (producto_id, tienda, precio, precio_descuento, datetime.now())
     )
     conn.commit()
     conn.close()
@@ -113,14 +128,14 @@ def obtener_productos():
     conn.close()
     return productos
 
-def procesar_precio(producto_id, nombre, tienda, precio_nuevo, url):
+def procesar_precio(producto_id, nombre, tienda, precio_nuevo, precio_descuento, url):
     precio_anterior = obtener_ultimo_precio(producto_id, tienda)
     
     if precio_nuevo is None:
         if precio_anterior is not None:
             enviar_alerta_url_rota(nombre, tienda, url)
     else:
-        guardar_precio(producto_id, tienda, precio_nuevo)
+        guardar_precio(producto_id, tienda, precio_nuevo, precio_descuento)
         if precio_anterior and precio_anterior != precio_nuevo:
             enviar_alerta(nombre, tienda, precio_anterior, precio_nuevo)
 
@@ -129,23 +144,23 @@ def scrape_producto(page, prod):
     print(f"Scrapeando: {nombre}")
 
     if url_puppis:
-        precio = scrape_precio_vtex(page, url_puppis)
-        procesar_precio(id, nombre, 'puppis', precio, url_puppis)
+        precio, desc = scrape_precio_vtex(page, url_puppis)
+        procesar_precio(id, nombre, 'puppis', precio, desc, url_puppis)
         print(f"  puppis: {precio}")
 
     if url_naturallife:
-        precio = scrape_precio_naturallife(page, url_naturallife)
-        procesar_precio(id, nombre, 'naturallife', precio, url_naturallife)
-        print(f"  naturallife: {precio}")
+        precio, desc = scrape_precio_naturallife(page, url_naturallife)
+        procesar_precio(id, nombre, 'naturallife', precio, desc, url_naturallife)
+        print(f"  naturallife: lista={precio} descuento={desc}")
 
     if url_nutrican:
-        precio = scrape_precio_meta(page, url_nutrican, variante=variante_nutrican)
-        procesar_precio(id, nombre, 'nutrican', precio, url_nutrican)
+        precio, desc = scrape_precio_meta(page, url_nutrican, variante=variante_nutrican)
+        procesar_precio(id, nombre, 'nutrican', precio, desc, url_nutrican)
         print(f"  nutrican: {precio}")
 
     if url_drovenort:
-        precio = scrape_precio_drovenort(page, url_drovenort)
-        procesar_precio(id, nombre, 'drovenort', precio, url_drovenort)
+        precio, desc = scrape_precio_drovenort(page, url_drovenort)
+        procesar_precio(id, nombre, 'drovenort', precio, desc, url_drovenort)
         print(f"  drovenort: {precio}")
 
 def correr_scraping_producto(prod):

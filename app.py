@@ -48,12 +48,12 @@ def execute_db(query, args=()):
 
 def obtener_ultimos_precios(producto_id):
     filas = query_db('''
-        SELECT DISTINCT ON (tienda) tienda, precio
+        SELECT DISTINCT ON (tienda) tienda, precio, precio_descuento
         FROM precios
         WHERE producto_id = %s
         ORDER BY tienda, fecha DESC
     ''', [producto_id])
-    return {f['tienda']: f['precio'] for f in filas}
+    return {f['tienda']: {'precio': f['precio'], 'descuento': f['precio_descuento']} for f in filas}
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -87,7 +87,7 @@ def index():
 def producto(id):
     prod = query_db('SELECT * FROM productos WHERE id = %s', [id], one=True)
     precios_raw = query_db('''
-        SELECT tienda, precio, fecha 
+        SELECT tienda, precio, precio_descuento, fecha 
         FROM precios 
         WHERE producto_id = %s
         ORDER BY fecha DESC
@@ -163,4 +163,4 @@ def scraping():
     return jsonify({'status': 'ok', 'mensaje': 'Scraping completado'})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
+    app.run(host='0.0.0.0', port=

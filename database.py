@@ -29,10 +29,16 @@ def init_db():
             producto_id INTEGER,
             tienda TEXT NOT NULL,
             precio REAL,
+            precio_descuento REAL,
             fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (producto_id) REFERENCES productos(id)
         )
     ''')
+
+    try:
+        c.execute('ALTER TABLE precios ADD COLUMN precio_descuento REAL')
+    except:
+        pass
     
     conn.commit()
     conn.close()
