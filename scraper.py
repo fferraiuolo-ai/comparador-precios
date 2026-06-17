@@ -43,16 +43,14 @@ def scrape_precio_kangoopet(page, url):
     try:
         page.goto(url, timeout=30000)
         page.wait_for_load_state('networkidle', timeout=15000)
-        # Buscar el precio de venta del producto principal (el menor sellingPrice)
-        elems_venta = page.query_selector_all('[class*="sellingPrice"]')
-        precios_venta = sorted([limpiar_precio(e.inner_text().strip()) for e in elems_venta if limpiar_precio(e.inner_text().strip())])
-        precio_venta = precios_venta[0] if precios_venta else None
-        # Buscar listPrice solo si es claramente el precio tachado del mismo producto
-        elems_lista = page.query_selector_all('[class*="listPrice"]')
-        precios_lista = sorted([limpiar_precio(e.inner_text().strip()) for e in elems_lista if limpiar_precio(e.inner_text().strip())])
-        # Solo considerar listPrice si es mayor que sellingPrice (hay descuento real)
-        precio_lista = next((p for p in precios_lista if precio_venta and p > precio_venta * 1.05), None)
-        if precio_lista and precio_venta:
+        # El primer sellingPrice es siempre el precio del producto principal
+        elem_venta = page.query_selector('[class*="sellingPrice"]')
+        precio_venta = limpiar_precio(elem_venta.inner_text().strip()) if elem_venta else None
+        # El primer listPrice es el precio tachado del mismo producto (si existe)
+        elem_lista = page.query_selector('[class*="listPrice"]')
+        precio_lista = limpiar_precio(elem_lista.inner_text().strip()) if elem_lista else None
+        # Solo mostrar listPrice si es mayor que sellingPrice (descuento real)
+        if precio_lista and precio_venta and precio_lista > precio_venta * 1.05:
             return precio_lista, precio_venta
         return precio_venta, None
     except Exception as e:
