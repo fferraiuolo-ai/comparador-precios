@@ -23,7 +23,7 @@ def enviar_mail(asunto, cuerpo):
     except Exception as e:
         print(f"  Error enviando mail: {e}")
 
-def enviar_alerta(producto, tienda, precio_anterior, precio_nuevo):
+def enviar_alerta(producto, tienda, precio_anterior, precio_nuevo, url=None):
     diferencia = precio_nuevo - precio_anterior
     porcentaje = (diferencia / precio_anterior) * 100
     direccion = "subió" if diferencia > 0 else "bajó"
@@ -39,6 +39,8 @@ Precio anterior: ${precio_anterior:,.0f}
 Precio nuevo: ${precio_nuevo:,.0f}
 Variación: {porcentaje:+.1f}% ({direccion})
 """
+    if url:
+        cuerpo += f"\nVer producto: {url}\n"
     enviar_mail(asunto, cuerpo)
 
 def enviar_alerta_url_rota(producto, tienda, url):

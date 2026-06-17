@@ -152,7 +152,7 @@ def procesar_precio(producto_id, nombre, tienda, precio_nuevo, precio_descuento,
     else:
         guardar_precio(producto_id, tienda, precio_nuevo, precio_descuento)
         if precio_anterior and precio_anterior != precio_nuevo:
-            enviar_alerta(nombre, tienda, precio_anterior, precio_nuevo)
+            enviar_alerta(nombre, tienda, precio_anterior, precio_nuevo, url)
 
 def guardar_log_scraping(estado, detalle=None):
     conn = get_conn()
