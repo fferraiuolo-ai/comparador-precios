@@ -103,8 +103,8 @@ def agregar():
         conn = get_conn()
         c = conn.cursor()
         c.execute('''
-            INSERT INTO productos (nombre, url_puppis, url_naturallife, url_nutrican, url_drovenort, variante_nutrican)
-            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+            INSERT INTO productos (nombre, url_puppis, url_naturallife, url_nutrican, url_drovenort, variante_nutrican, url_kangoopet)
+            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
         ''', (
             request.form['nombre'],
             request.form['url_puppis'],
@@ -112,6 +112,7 @@ def agregar():
             request.form['url_nutrican'],
             request.form['url_drovenort'],
             request.form['variante_nutrican'],
+            request.form['url_kangoopet'],
         ))
         nuevo_id = c.fetchone()[0]
         conn.commit()
@@ -125,6 +126,7 @@ def agregar():
             request.form['url_nutrican'],
             request.form['url_drovenort'],
             request.form['variante_nutrican'],
+            request.form['url_kangoopet'],
         )
         threading.Thread(target=correr_scraping_producto, args=(producto_data,)).start()
         return redirect(url_for('index'))
@@ -135,7 +137,7 @@ def agregar():
 def editar(id):
     if request.method == 'POST':
         execute_db('''
-            UPDATE productos SET nombre=%s, url_puppis=%s, url_naturallife=%s, url_nutrican=%s, url_drovenort=%s, variante_nutrican=%s
+            UPDATE productos SET nombre=%s, url_puppis=%s, url_naturallife=%s, url_nutrican=%s, url_drovenort=%s, variante_nutrican=%s, url_kangoopet=%s
             WHERE id=%s
         ''', (
             request.form['nombre'],
@@ -144,6 +146,7 @@ def editar(id):
             request.form['url_nutrican'],
             request.form['url_drovenort'],
             request.form['variante_nutrican'],
+            request.form['url_kangoopet'],
             id,
         ))
         return redirect(url_for('index'))

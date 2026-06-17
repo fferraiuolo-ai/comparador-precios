@@ -75,9 +75,11 @@
             <th>Natural Life<br><small>lista / débito</small></th>
             <th>Nutrican</th>
             <th>Drovenort</th>
+            <th>Kangoo Pet<br><small>lista / desc</small></th>
             <th>vs NL</th>
             <th>vs Nutrican</th>
             <th>vs Drovenort</th>
+            <th>vs Kangoo</th>
             {% if usuario %}<th></th>{% endif %}
         </tr>
         {% for p in productos %}
@@ -85,7 +87,7 @@
         <tr>
             <td class="left"><a href="/producto/{{ p['id'] }}" style="color:#0066cc;text-decoration:none;">{{ p['nombre'] }}</a></td>
 
-            {% for tienda in ['puppis', 'naturallife', 'nutrican', 'drovenort'] %}
+            {% for tienda in ['puppis', 'naturallife', 'nutrican', 'drovenort', 'kangoopet'] %}
                 {% set datos = precios.get(tienda, {}) %}
                 {% set precio = datos.get('precio') %}
                 {% set desc = datos.get('descuento') %}
@@ -102,7 +104,7 @@
             {% endfor %}
 
             {% set puppis = precios.get('puppis', {}).get('precio') %}
-            {% for tienda in ['naturallife', 'nutrican', 'drovenort'] %}
+            {% for tienda in ['naturallife', 'nutrican', 'drovenort', 'kangoopet'] %}
                 {% set datos = precios.get(tienda, {}) %}
                 {% set competidor = datos.get('descuento') or datos.get('precio') %}
                 {% if puppis and competidor %}
@@ -136,7 +138,7 @@
         <div class="card">
             <a href="/producto/{{ p['id'] }}" class="card-nombre">{{ p['nombre'] }}</a>
             <div class="card-precios">
-                {% for tienda, label in [('puppis','Puppis'),('naturallife','Natural Life'),('nutrican','Nutrican'),('drovenort','Drovenort')] %}
+                {% for tienda, label in [('puppis','Puppis'),('naturallife','Natural Life'),('nutrican','Nutrican'),('drovenort','Drovenort'),('kangoopet','Kangoo Pet')] %}
                 {% set datos = precios.get(tienda, {}) %}
                 {% set precio = datos.get('precio') %}
                 {% set desc = datos.get('descuento') %}
@@ -155,7 +157,7 @@
             </div>
             {% set puppis = precios.get('puppis', {}).get('precio') %}
             <div class="card-desviaciones">
-                {% for tienda, label in [('naturallife','vs NL'),('nutrican','vs Nutrican'),('drovenort','vs Drovenort')] %}
+                {% for tienda, label in [('naturallife','vs NL'),('nutrican','vs Nutrican'),('drovenort','vs Drovenort'),('kangoopet','vs Kangoo')] %}
                 <div class="card-desv">
                     <div class="tienda">{{ label }}</div>
                     {% set datos = precios.get(tienda, {}) %}
