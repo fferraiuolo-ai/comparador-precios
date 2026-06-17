@@ -43,13 +43,18 @@ def scrape_precio_kangoopet(page, url):
     try:
         page.goto(url, timeout=30000)
         page.wait_for_load_state('networkidle', timeout=15000)
-        elem_lista = page.query_selector('[class*="listPrice"]')
-        elem_venta = page.query_selector('[class*="sellingPrice"]')
-        precio_lista = limpiar_precio(elem_lista.inner_text().strip()) if elem_lista else None
-        precio_venta = limpiar_precio(elem_venta.inner_text().strip()) if elem_venta else None
-        if precio_lista and precio_venta and precio_lista != precio_venta:
+        # Buscar el precio de venta del producto principal (el menor sellingPrice)
+        elems_venta = page.query_selector_all('[class*="sellingPrice"]')
+        precios_venta = sorted([limpiar_precio(e.inner_text().strip()) for e in elems_venta if limpiar_precio(e.inner_text().strip())])
+        precio_venta = precios_venta[0] if precios_venta else None
+        # Buscar listPrice solo si es claramente el precio tachado del mismo producto
+        elems_lista = page.query_selector_all('[class*="listPrice"]')
+        precios_lista = sorted([limpiar_precio(e.inner_text().strip()) for e in elems_lista if limpiar_precio(e.inner_text().strip())])
+        # Solo considerar listPrice si es mayor que sellingPrice (hay descuento real)
+        precio_lista = next((p for p in precios_lista if precio_venta and p > precio_venta * 1.05), None)
+        if precio_lista and precio_venta:
             return precio_lista, precio_venta
-        return precio_lista or precio_venta, None
+        return precio_venta, None
     except Exception as e:
         print(f"  Error: {e}")
     return None, None
@@ -177,7 +182,7 @@ def guardar_log_scraping(estado, detalle=None):
     conn.close()
 
 def scrape_producto(page, prod):
-    id, nombre, url_puppis, url_naturallife, url_nutrican, url_drovenort, variante_nutrican = prod
+    id, nombre, url_puppis, url_naturallife, url_nutrican, url_drovenort, variante_nutrican, url_kangoopet = prod[:8] if len(prod) >= 8 else (*prod, None)
     print(f"Scrapeando: {nombre}")
 
     if url_puppis:
@@ -200,7 +205,6 @@ def scrape_producto(page, prod):
         procesar_precio(id, nombre, 'drovenort', precio, desc, url_drovenort)
         print(f"  drovenort: {precio}")
 
-    url_kangoopet = prod[7] if len(prod) > 7 else None
     if url_kangoopet:
         precio, desc = scrape_precio_kangoopet(page, url_kangoopet)
         procesar_precio(id, nombre, 'kangoopet', precio, desc, url_kangoopet)
