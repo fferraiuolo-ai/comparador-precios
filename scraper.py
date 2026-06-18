@@ -31,11 +31,12 @@ def scrape_precio_vtex(page, url):
     try:
         page.goto(url, timeout=30000)
         page.wait_for_load_state('networkidle', timeout=15000)
+        page.wait_for_timeout(2000)
         # Si el SKU seleccionado no tiene stock, no tomar precio
         sin_stock = page.query_selector('[class*="skuSelectorItem--selected"][class*="unavailable"]')
         if sin_stock:
             print(f"  Sin stock, precio omitido")
-            return None, None
+            return 'sin_stock', None
         elemento = page.query_selector('[class*="sellingPrice"]')
         if elemento:
             texto = elemento.inner_text().strip()
@@ -167,6 +168,8 @@ errores_scraping = []
 def procesar_precio(producto_id, nombre, tienda, precio_nuevo, precio_descuento, url):
     precio_anterior = obtener_ultimo_precio(producto_id, tienda)
 
+    if precio_nuevo == 'sin_stock':
+        return  # Sin stock no es un error, simplemente no se guarda precio
     if precio_nuevo is None:
         msg = f"URL rota: {nombre} en {tienda}"
         errores_scraping.append(msg)
