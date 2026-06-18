@@ -3,6 +3,7 @@ import psycopg2
 import os
 from datetime import datetime
 import re
+import requests
 from alertas import enviar_alerta, enviar_alerta_url_rota
 
 def get_conn():
@@ -27,41 +28,53 @@ def limpiar_precio(texto):
     except:
         return None
 
-def scrape_precio_vtex(page, url):
+def scrape_precio_vtex_api(url, dominio):
     try:
-        page.goto(url, timeout=30000)
-        page.wait_for_load_state('networkidle', timeout=15000)
-        page.wait_for_timeout(2000)
-        # Si el SKU seleccionado no tiene stock, no tomar precio
-        sin_stock = page.query_selector('[class*="skuSelectorItem--selected"][class*="unavailable"]')
-        if sin_stock:
-            print(f"  Sin stock, precio omitido")
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        # Extraer productId del HTML de la página
+        resp_html = requests.get(url, timeout=15, headers=headers)
+        ids = re.findall(r'"productId":"(\d+)"', resp_html.text)
+        if not ids:
+            return None, None
+        product_id = ids[0]
+        # Consultar API con productId
+        api_url = f'https://{dominio}/api/catalog_system/pub/products/search?fq=productId:{product_id}'
+        resp = requests.get(api_url, timeout=10, headers=headers)
+        data = resp.json()
+        if not data:
+            return None, None
+        producto = data[0]
+        items = producto.get('items', [])
+        if not items:
+            return None, None
+        # Buscar el primer SKU disponible
+        sku = None
+        for item in items:
+            for seller in item.get('sellers', []):
+                oferta = seller.get('commertialOffer', {})
+                if oferta.get('IsAvailable') and oferta.get('AvailableQuantity', 0) > 0:
+                    sku = oferta
+                    break
+            if sku:
+                break
+        if not sku:
             return 'sin_stock', None
-        elemento = page.query_selector('[class*="sellingPrice"]')
-        if elemento:
-            texto = elemento.inner_text().strip()
-            return limpiar_precio(texto), None
+        price = sku.get('Price')
+        list_price = sku.get('ListPrice')
+        if price and list_price and list_price > price * 1.01:
+            return list_price, price
+        return price, None
     except Exception as e:
-        print(f"  Error: {e}")
+        print(f"  Error API VTEX: {e}")
     return None, None
 
+def scrape_precio_vtex(page, url):
+    precio, desc = scrape_precio_vtex_api(url, 'www.puppis.com.ar')
+    return precio, desc
+
 def scrape_precio_kangoopet(page, url):
-    try:
-        page.goto(url, timeout=30000)
-        page.wait_for_load_state('networkidle', timeout=15000)
-        # El primer sellingPrice es siempre el precio del producto principal
-        elem_venta = page.query_selector('[class*="sellingPrice"]')
-        precio_venta = limpiar_precio(elem_venta.inner_text().strip()) if elem_venta else None
-        # El primer listPrice es el precio tachado del mismo producto (si existe)
-        elem_lista = page.query_selector('[class*="listPrice"]')
-        precio_lista = limpiar_precio(elem_lista.inner_text().strip()) if elem_lista else None
-        # Solo mostrar listPrice si es mayor que sellingPrice (descuento real)
-        if precio_lista and precio_venta and precio_lista > precio_venta * 1.05:
-            return precio_lista, precio_venta
-        return precio_venta, None
-    except Exception as e:
-        print(f"  Error: {e}")
-    return None, None
+    precio, desc = scrape_precio_vtex_api(url, 'www.kangoopet.com.ar')
+    return precio, desc
 
 def scrape_precio_naturallife(page, url):
     try:
@@ -122,16 +135,8 @@ def scrape_precio_meta(page, url, variante=None):
     return None, None
 
 def scrape_precio_drovenort(page, url):
-    try:
-        page.goto(url, timeout=30000)
-        page.wait_for_load_state('networkidle', timeout=15000)
-        elemento = page.query_selector('.text-no-wrap.mr-2.price')
-        if elemento:
-            texto = elemento.inner_text().strip()
-            return limpiar_precio(texto), None
-    except Exception as e:
-        print(f"  Error: {e}")
-    return None, None
+    precio, desc = scrape_precio_vtex_api(url, 'www.drovenort.com.ar')
+    return precio, desc
 
 def obtener_ultimo_precio(producto_id, tienda):
     conn = get_conn()
