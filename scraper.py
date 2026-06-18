@@ -31,6 +31,11 @@ def scrape_precio_vtex(page, url):
     try:
         page.goto(url, timeout=30000)
         page.wait_for_load_state('networkidle', timeout=15000)
+        # Si el SKU seleccionado no tiene stock, no tomar precio
+        sin_stock = page.query_selector('[class*="skuSelectorItem--selected"][class*="unavailable"]')
+        if sin_stock:
+            print(f"  Sin stock, precio omitido")
+            return None, None
         elemento = page.query_selector('[class*="sellingPrice"]')
         if elemento:
             texto = elemento.inner_text().strip()
