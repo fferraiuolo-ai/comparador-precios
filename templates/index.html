@@ -87,9 +87,24 @@
         {% set precios = p['precios'] %}
         {% if p['proveedor'] and p['proveedor'] != proveedor_actual.valor %}
         {% set proveedor_actual.valor = p['proveedor'] %}
+        {% set prom = promedios_proveedor.get(p['proveedor'], {}) %}
         <tr>
-            <td colspan="{% if usuario %}11{% else %}10{% endif %}" style="background:#e8f0fe;font-weight:bold;color:#0066cc;padding:8px;font-size:13px;">
+            <td colspan="{% if usuario %}11{% else %}10{% endif %}" style="background:#e8f0fe;font-weight:bold;color:#0066cc;padding:8px;font-size:12px;">
                 {{ p['proveedor'] }}
+                {% if prom.get('general') is not none %}
+                &nbsp;—&nbsp;
+                <span style="color:{% if prom.general > 0 %}#dc3545{% else %}#28a745{% endif %}">
+                    Promedio general: {% if prom.general > 0 %}+{% endif %}{{ "%.1f"|format(prom.general) }}%
+                </span>
+                {% for tienda, label in [('naturallife','NL'),('nutrican','Nutrican'),('drovenort','Drovenort'),('kangoopet','Kangoo')] %}
+                    {% if prom.get(tienda) is not none %}
+                    &nbsp;|&nbsp;vs {{ label }}:
+                    <span style="color:{% if prom[tienda] > 0 %}#dc3545{% else %}#28a745{% endif %}">
+                        {% if prom[tienda] > 0 %}+{% endif %}{{ "%.1f"|format(prom[tienda]) }}%
+                    </span>
+                    {% endif %}
+                {% endfor %}
+                {% endif %}
             </td>
         </tr>
         {% endif %}

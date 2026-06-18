@@ -84,17 +84,49 @@ PROVEEDORES = [
     'Patagonia Pet S.A.',
 ]
 
+def calcular_desviacion(puppis, competidor):
+    if puppis and competidor:
+        return (puppis - competidor) / competidor * 100
+    return None
+
+def calcular_promedios_proveedor(productos):
+    tiendas = ['naturallife', 'nutrican', 'drovenort', 'kangoopet']
+    promedios = {}
+    for proveedor, prods in productos.items():
+        desviaciones = {t: [] for t in tiendas}
+        for prod in prods:
+            puppis = prod['precios'].get('puppis', {}).get('precio')
+            for t in tiendas:
+                datos = prod['precios'].get(t, {})
+                competidor = datos.get('descuento') or datos.get('precio')
+                d = calcular_desviacion(puppis, competidor)
+                if d is not None:
+                    desviaciones[t].append(d)
+        promedios[proveedor] = {}
+        todos = []
+        for t in tiendas:
+            if desviaciones[t]:
+                avg = sum(desviaciones[t]) / len(desviaciones[t])
+                promedios[proveedor][t] = avg
+                todos.extend(desviaciones[t])
+        promedios[proveedor]['general'] = sum(todos) / len(todos) if todos else None
+    return promedios
+
 @app.route('/')
 def index():
     productos_raw = query_db('SELECT * FROM productos ORDER BY proveedor NULLS LAST, nombre')
     productos = []
+    productos_por_proveedor = {}
     for p in productos_raw:
         prod = dict(p)
         prod['precios'] = obtener_ultimos_precios(p['id'])
         productos.append(prod)
+        prov = prod.get('proveedor') or 'Sin proveedor'
+        productos_por_proveedor.setdefault(prov, []).append(prod)
+    promedios_proveedor = calcular_promedios_proveedor(productos_por_proveedor)
     usuario = session.get('usuario')
     ultimo_log = query_db('SELECT * FROM scraping_log ORDER BY fecha DESC LIMIT 1', one=True)
-    return render_template('index.html', productos=productos, usuario=usuario, ultimo_log=ultimo_log)
+    return render_template('index.html', productos=productos, usuario=usuario, ultimo_log=ultimo_log, promedios_proveedor=promedios_proveedor)
 
 @app.route('/producto/<int:id>')
 def producto(id):
