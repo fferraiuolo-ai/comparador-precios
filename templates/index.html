@@ -82,8 +82,17 @@
             <th>vs Kangoo</th>
             {% if usuario %}<th></th>{% endif %}
         </tr>
+        {% set proveedor_actual = namespace(valor='') %}
         {% for p in productos %}
         {% set precios = p['precios'] %}
+        {% if p['proveedor'] and p['proveedor'] != proveedor_actual.valor %}
+        {% set proveedor_actual.valor = p['proveedor'] %}
+        <tr>
+            <td colspan="{% if usuario %}11{% else %}10{% endif %}" style="background:#e8f0fe;font-weight:bold;color:#0066cc;padding:8px;font-size:13px;">
+                {{ p['proveedor'] }}
+            </td>
+        </tr>
+        {% endif %}
         <tr>
             <td class="left"><a href="/producto/{{ p['id'] }}" style="color:#0066cc;text-decoration:none;">{{ p['nombre'] }}</a></td>
 

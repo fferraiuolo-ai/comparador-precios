@@ -47,6 +47,12 @@ def init_db():
     except:
         conn.rollback()
 
+    try:
+        c.execute('ALTER TABLE productos ADD COLUMN proveedor TEXT')
+        conn.commit()
+    except:
+        conn.rollback()
+
     c.execute('''
         CREATE TABLE IF NOT EXISTS scraping_log (
             id SERIAL PRIMARY KEY,

@@ -20,6 +20,14 @@
     <h1>Agregar Producto</h1>
     <div class="form-container">
         <form method="POST">
+            <label>Proveedor</label>
+            <select name="proveedor" required>
+                <option value="">-- Seleccioná un proveedor --</option>
+                {% for p in proveedores %}
+                <option value="{{ p }}">{{ p }}</option>
+                {% endfor %}
+            </select>
+
             <label>Nombre del producto</label>
             <input type="text" name="nombre" placeholder="Ej: Royal Canin Adulto 15kg" required>
 

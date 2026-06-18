@@ -72,9 +72,21 @@ def logout():
     session.pop('usuario', None)
     return redirect(url_for('index'))
 
+PROVEEDORES = [
+    'Agro Industrias Baires S.A.',
+    'Nestle Argentina S.A.',
+    'Royal Canin Argentina S.A.',
+    'Vitalcan S.A.',
+    'Marini y Compañia S.A.',
+    'Alican S.A.',
+    'GBA M6 S.A.',
+    'Molinos Tassara S.A.',
+    'Patagonia Pet S.A.',
+]
+
 @app.route('/')
 def index():
-    productos_raw = query_db('SELECT * FROM productos ORDER BY nombre')
+    productos_raw = query_db('SELECT * FROM productos ORDER BY proveedor NULLS LAST, nombre')
     productos = []
     for p in productos_raw:
         prod = dict(p)
@@ -103,8 +115,8 @@ def agregar():
         conn = get_conn()
         c = conn.cursor()
         c.execute('''
-            INSERT INTO productos (nombre, url_puppis, url_naturallife, url_nutrican, url_drovenort, variante_nutrican, url_kangoopet)
-            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
+            INSERT INTO productos (nombre, url_puppis, url_naturallife, url_nutrican, url_drovenort, variante_nutrican, url_kangoopet, proveedor)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
         ''', (
             request.form['nombre'],
             request.form['url_puppis'],
@@ -113,6 +125,7 @@ def agregar():
             request.form['url_drovenort'],
             request.form['variante_nutrican'],
             request.form['url_kangoopet'],
+            request.form['proveedor'],
         ))
         nuevo_id = c.fetchone()[0]
         conn.commit()
@@ -130,14 +143,14 @@ def agregar():
         )
         threading.Thread(target=correr_scraping_producto, args=(producto_data,)).start()
         return redirect(url_for('index'))
-    return render_template('agregar.html')
+    return render_template('agregar.html', proveedores=PROVEEDORES)
 
 @app.route('/editar/<int:id>', methods=['GET', 'POST'])
 @login_requerido
 def editar(id):
     if request.method == 'POST':
         execute_db('''
-            UPDATE productos SET nombre=%s, url_puppis=%s, url_naturallife=%s, url_nutrican=%s, url_drovenort=%s, variante_nutrican=%s, url_kangoopet=%s
+            UPDATE productos SET nombre=%s, url_puppis=%s, url_naturallife=%s, url_nutrican=%s, url_drovenort=%s, variante_nutrican=%s, url_kangoopet=%s, proveedor=%s
             WHERE id=%s
         ''', (
             request.form['nombre'],
@@ -147,11 +160,12 @@ def editar(id):
             request.form['url_drovenort'],
             request.form['variante_nutrican'],
             request.form['url_kangoopet'],
+            request.form['proveedor'],
             id,
         ))
         return redirect(url_for('index'))
     prod = query_db('SELECT * FROM productos WHERE id = %s', [id], one=True)
-    return render_template('editar.html', producto=prod)
+    return render_template('editar.html', producto=prod, proveedores=PROVEEDORES)
 
 @app.route('/eliminar/<int:id>')
 @login_requerido
