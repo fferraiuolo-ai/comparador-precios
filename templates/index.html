@@ -14,30 +14,56 @@
         .btn-rojo { background: #dc3545; }
         .btn-naranja { background: #fd7e14; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 8px; }
-        .tabla-desktop { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; font-size: 13px; }
+
+        /* Tabla desktop */
+        .tabla-desktop { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; font-size: 13px; margin-bottom: 20px; }
         .tabla-desktop th { background: #0066cc; color: white; padding: 10px 8px; text-align: center; }
         .tabla-desktop th.left { text-align: left; }
         .tabla-desktop td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: center; vertical-align: middle; }
         .tabla-desktop td.left { text-align: left; font-weight: bold; }
         .tabla-desktop tr:hover { background: #f9f9f9; }
+        .fila-proveedor td { background: #e8f0fe !important; }
         .precio-lista { font-weight: bold; color: #333; display: block; }
         .precio-desc { font-size: 11px; color: #28a745; display: block; }
+        .mas-caro { color: #dc3545; }
+        .mas-barato { color: #28a745; }
+        .sin-precio { color: #aaa; font-size: 12px; }
+
+        /* Link proveedor */
+        .proveedor-link { color: #0066cc; font-weight: bold; font-size: 13px; cursor: pointer; text-decoration: none; border: none; background: none; padding: 0; }
+        .proveedor-link:hover { text-decoration: underline; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-overlay.activo { display: flex; }
+        .modal { background: white; border-radius: 10px; padding: 24px; max-width: 560px; width: 90%; max-height: 85vh; overflow-y: auto; }
+        .modal h2 { margin: 0 0 16px; font-size: 17px; color: #0066cc; }
+        .modal-cerrar { float: right; background: none; border: none; font-size: 20px; cursor: pointer; color: #666; margin-top: -4px; }
+        .modal-seccion { margin-bottom: 16px; }
+        .modal-seccion h3 { font-size: 13px; color: #888; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .modal-fila { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        .modal-fila:last-child { border-bottom: none; }
+        .modal-fila .label { color: #555; }
+        .modal-destac { font-size: 16px; font-weight: bold; padding: 10px; background: #f5f5f5; border-radius: 6px; text-align: center; margin-bottom: 16px; }
+
+        /* Cards mobile */
         .cards { display: none; }
-        .card { background: white; border-radius: 8px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .card-nombre { font-weight: bold; font-size: 15px; margin-bottom: 10px; color: #0066cc; text-decoration: none; display: block; }
+        .card-proveedor { background: #e8f0fe; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; }
+        .card-proveedor-nombre { font-weight: bold; color: #0066cc; font-size: 14px; cursor: pointer; }
+        .card-proveedor-nombre:hover { text-decoration: underline; }
+        .card { background: white; border-radius: 8px; padding: 14px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-nombre { font-weight: bold; font-size: 14px; margin-bottom: 10px; color: #0066cc; text-decoration: none; display: block; }
         .card-precios { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
         .card-precio { background: #f5f5f5; border-radius: 4px; padding: 6px 8px; }
         .card-precio .tienda { font-size: 11px; color: #888; }
-        .card-precio .valor { font-weight: bold; font-size: 14px; }
+        .card-precio .valor { font-weight: bold; font-size: 13px; }
         .card-precio .valor-desc { font-size: 11px; color: #28a745; }
-        .card-desviaciones { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+        .card-desviaciones { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
         .card-desv { background: #f5f5f5; border-radius: 4px; padding: 6px 8px; text-align: center; }
         .card-desv .tienda { font-size: 10px; color: #888; }
         .card-desv .valor { font-weight: bold; font-size: 13px; }
         .card-acciones { display: flex; gap: 8px; }
-        .mas-caro { color: #dc3545; }
-        .mas-barato { color: #28a745; }
-        .sin-precio { color: #aaa; font-size: 12px; }
+
         @media (max-width: 768px) {
             .tabla-desktop { display: none; }
             .cards { display: block; }
@@ -45,6 +71,7 @@
     </style>
 </head>
 <body>
+
     {% if ultimo_log and ultimo_log['estado'] == 'error' %}
     <div class="alerta-error">
         ⚠️ <strong>El último scraping tuvo errores:</strong> {{ ultimo_log['detalle'] }}<br>
@@ -67,50 +94,48 @@
 
     {% if productos %}
 
-    <!-- Vista Desktop -->
-    <table class="tabla-desktop">
-        <tr>
-            <th class="left">Producto</th>
-            <th>Puppis</th>
-            <th>Natural Life<br><small>lista / débito</small></th>
-            <th>Nutrican</th>
-            <th>Drovenort</th>
-            <th>Kangoo Pet<br><small>lista / desc</small></th>
-            <th>vs NL</th>
-            <th>vs Nutrican</th>
-            <th>vs Drovenort</th>
-            <th>vs Kangoo</th>
-            {% if usuario %}<th></th>{% endif %}
-        </tr>
-        {% set proveedor_actual = namespace(valor='') %}
-        {% for p in productos %}
-        {% set precios = p['precios'] %}
-        {% if p['proveedor'] and p['proveedor'] != proveedor_actual.valor %}
-        {% set proveedor_actual.valor = p['proveedor'] %}
-        {% set prom = promedios_proveedor.get(p['proveedor'], {}) %}
-        <tr>
-            <td colspan="{% if usuario %}11{% else %}10{% endif %}" style="background:#e8f0fe;font-weight:bold;color:#0066cc;padding:8px;font-size:12px;">
-                {{ p['proveedor'] }}
-                {% if prom.get('general') is not none %}
-                &nbsp;—&nbsp;
-                <span style="color:{% if prom.general > 0 %}#dc3545{% else %}#28a745{% endif %}">
-                    Promedio general: {% if prom.general > 0 %}+{% endif %}{{ "%.1f"|format(prom.general) }}%
-                </span>
-                {% for tienda, label in [('naturallife','NL'),('nutrican','Nutrican'),('drovenort','Drovenort'),('kangoopet','Kangoo')] %}
-                    {% if prom.get(tienda) is not none %}
-                    &nbsp;|&nbsp;vs {{ label }}:
-                    <span style="color:{% if prom[tienda] > 0 %}#dc3545{% else %}#28a745{% endif %}">
-                        {% if prom[tienda] > 0 %}+{% endif %}{{ "%.1f"|format(prom[tienda]) }}%
-                    </span>
-                    {% endif %}
-                {% endfor %}
-                {% endif %}
-            </td>
-        </tr>
+    {% set COLS = "{% if usuario %}11{% else %}10{% endif %}" %}
+
+    <!-- Macros de encabezado de tabla -->
+    {% macro encabezado_tabla() %}
+    <tr>
+        <th class="left">Producto</th>
+        <th>Puppis</th>
+        <th>Natural Life<br><small>lista / débito</small></th>
+        <th>Nutrican<br><small>lista / transf.</small></th>
+        <th>Drovenort</th>
+        <th>Kangoo Pet<br><small>lista / desc</small></th>
+        <th>vs NL</th>
+        <th>vs Nutrican</th>
+        <th>vs Drovenort</th>
+        <th>vs Kangoo</th>
+        {% if usuario %}<th></th>{% endif %}
+    </tr>
+    {% endmacro %}
+
+    <!-- Vista Desktop: una tabla por proveedor -->
+    {% set proveedor_actual = namespace(valor='') %}
+    {% for p in productos %}
+        {% if p['proveedor'] != proveedor_actual.valor %}
+            {% if proveedor_actual.valor != '' %}
+            </table>
+            {% endif %}
+            {% set proveedor_actual.valor = p['proveedor'] %}
+            {% set prom = promedios_proveedor.get(p['proveedor'] or '', {}) %}
+            <table class="tabla-desktop">
+            <tr class="fila-proveedor">
+                <td colspan="{% if usuario %}11{% else %}10{% endif %}" style="padding:10px 8px;">
+                    <button class="proveedor-link" onclick="abrirModal('{{ p['proveedor'] or 'Sin proveedor' }}')">
+                        {{ p['proveedor'] or 'Sin proveedor' }} ▸
+                    </button>
+                </td>
+            </tr>
+            {{ encabezado_tabla() }}
         {% endif %}
+
+        {% set precios = p['precios'] %}
         <tr>
             <td class="left"><a href="/producto/{{ p['id'] }}" style="color:#0066cc;text-decoration:none;">{{ p['nombre'] }}</a></td>
-
             {% for tienda in ['puppis', 'naturallife', 'nutrican', 'drovenort', 'kangoopet'] %}
                 {% set datos = precios.get(tienda, {}) %}
                 {% set precio = datos.get('precio') %}
@@ -118,15 +143,12 @@
                 {% if precio %}
                     <td>
                         <span class="precio-lista">${{ "{:,.0f}".format(precio).replace(",", ".") }}</span>
-                        {% if desc %}
-                            <span class="precio-desc">${{ "{:,.0f}".format(desc).replace(",", ".") }} débito</span>
-                        {% endif %}
+                        {% if desc %}<span class="precio-desc">${{ "{:,.0f}".format(desc).replace(",", ".") }} déb.</span>{% endif %}
                     </td>
                 {% else %}
                     <td class="sin-precio">-</td>
                 {% endif %}
             {% endfor %}
-
             {% set puppis = precios.get('puppis', {}).get('precio') %}
             {% for tienda in ['naturallife', 'nutrican', 'drovenort', 'kangoopet'] %}
                 {% set datos = precios.get(tienda, {}) %}
@@ -144,7 +166,6 @@
                     <td class="sin-precio">-</td>
                 {% endif %}
             {% endfor %}
-
             {% if usuario %}
             <td>
                 <a href="/editar/{{ p['id'] }}" class="btn btn-naranja">Editar</a>
@@ -152,13 +173,22 @@
             </td>
             {% endif %}
         </tr>
-        {% endfor %}
+    {% endfor %}
     </table>
 
     <!-- Vista Mobile -->
     <div class="cards">
+        {% set proveedor_mobile = namespace(valor='') %}
         {% for p in productos %}
         {% set precios = p['precios'] %}
+        {% if p['proveedor'] != proveedor_mobile.valor %}
+            {% set proveedor_mobile.valor = p['proveedor'] %}
+            <div class="card-proveedor">
+                <div class="card-proveedor-nombre" onclick="abrirModal('{{ p['proveedor'] or 'Sin proveedor' }}')">
+                    {{ p['proveedor'] or 'Sin proveedor' }} ▸
+                </div>
+            </div>
+        {% endif %}
         <div class="card">
             <a href="/producto/{{ p['id'] }}" class="card-nombre">{{ p['nombre'] }}</a>
             <div class="card-precios">
@@ -170,9 +200,7 @@
                     <div class="tienda">{{ label }}</div>
                     {% if precio %}
                         <div class="valor">${{ "{:,.0f}".format(precio).replace(",", ".") }}</div>
-                        {% if desc %}
-                            <div class="valor-desc">${{ "{:,.0f}".format(desc).replace(",", ".") }} déb.</div>
-                        {% endif %}
+                        {% if desc %}<div class="valor-desc">${{ "{:,.0f}".format(desc).replace(",", ".") }} déb.</div>{% endif %}
                     {% else %}
                         <div class="valor sin-precio">-</div>
                     {% endif %}
@@ -214,5 +242,95 @@
     {% else %}
     <p>No hay productos cargados todavía. {% if usuario %}<a href="/agregar">Agregá el primero.</a>{% endif %}</p>
     {% endif %}
+
+    <!-- Modal de detalle por proveedor -->
+    <div class="modal-overlay" id="modal-overlay" onclick="cerrarModal(event)">
+        <div class="modal">
+            <button class="modal-cerrar" onclick="document.getElementById('modal-overlay').classList.remove('activo')">✕</button>
+            <h2 id="modal-titulo"></h2>
+            <div id="modal-contenido"></div>
+        </div>
+    </div>
+
+    <script>
+    var promedios = {{ promedios_proveedor | tojson }};
+    var productos = {{ productos | tojson }};
+
+    function fmt(n) {
+        if (n === null || n === undefined) return '-';
+        return (n > 0 ? '+' : '') + n.toFixed(1) + '%';
+    }
+    function color(n) {
+        if (n === null || n === undefined) return '#888';
+        return n > 0 ? '#dc3545' : '#28a745';
+    }
+
+    function abrirModal(proveedor) {
+        var prom = promedios[proveedor] || {};
+        var prods = productos.filter(function(p){ return p.proveedor === proveedor; });
+
+        // Calcular producto con mayor y menor desviacion general
+        var maxDesv = null, minDesv = null, maxProd = '', minProd = '';
+        prods.forEach(function(p) {
+            var puppis = p.precios.puppis ? p.precios.puppis.precio : null;
+            var desvsTotal = [];
+            ['naturallife','nutrican','drovenort','kangoopet'].forEach(function(t) {
+                var datos = p.precios[t] || {};
+                var comp = datos.descuento || datos.precio;
+                if (puppis && comp) desvsTotal.push((puppis - comp) / comp * 100);
+            });
+            if (desvsTotal.length) {
+                var avg = desvsTotal.reduce(function(a,b){return a+b;},0) / desvsTotal.length;
+                if (maxDesv === null || avg > maxDesv) { maxDesv = avg; maxProd = p.nombre; }
+                if (minDesv === null || avg < minDesv) { minDesv = avg; minProd = p.nombre; }
+            }
+        });
+
+        var tiendas = [['naturallife','Natural Life'],['nutrican','Nutrican'],['drovenort','Drovenort'],['kangoopet','Kangoo Pet']];
+        var html = '';
+
+        // Promedio general
+        html += '<div class="modal-destac" style="color:' + color(prom.general) + '">';
+        html += 'Promedio general: ' + fmt(prom.general);
+        html += '</div>';
+
+        // Desglose por tienda
+        html += '<div class="modal-seccion"><h3>Desviación promedio vs competidores</h3>';
+        tiendas.forEach(function(t) {
+            var v = prom[t[0]];
+            if (v !== undefined && v !== null) {
+                html += '<div class="modal-fila"><span class="label">vs ' + t[1] + '</span>';
+                html += '<span style="font-weight:bold;color:' + color(v) + '">' + fmt(v) + '</span></div>';
+            }
+        });
+        html += '</div>';
+
+        // Producto más caro y más barato
+        if (maxProd) {
+            html += '<div class="modal-seccion"><h3>Destacados</h3>';
+            html += '<div class="modal-fila"><span class="label">Más caro vs competencia</span>';
+            html += '<span style="color:#dc3545;font-size:12px;">' + maxProd + ' (' + fmt(maxDesv) + ')</span></div>';
+            html += '<div class="modal-fila"><span class="label">Más barato vs competencia</span>';
+            html += '<span style="color:#28a745;font-size:12px;">' + minProd + ' (' + fmt(minDesv) + ')</span></div>';
+            html += '</div>';
+        }
+
+        // Cantidad de productos
+        html += '<div class="modal-seccion"><h3>Productos monitoreados</h3>';
+        html += '<div class="modal-fila"><span class="label">Total</span><span>' + prods.length + ' productos</span></div>';
+        html += '</div>';
+
+        document.getElementById('modal-titulo').innerText = proveedor;
+        document.getElementById('modal-contenido').innerHTML = html;
+        document.getElementById('modal-overlay').classList.add('activo');
+    }
+
+    function cerrarModal(event) {
+        if (event.target === document.getElementById('modal-overlay')) {
+            document.getElementById('modal-overlay').classList.remove('activo');
+        }
+    }
+    </script>
+
 </body>
 </html>
