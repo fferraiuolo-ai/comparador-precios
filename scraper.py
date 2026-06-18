@@ -135,8 +135,16 @@ def scrape_precio_meta(page, url, variante=None):
     return None, None
 
 def scrape_precio_drovenort(page, url):
-    precio, desc = scrape_precio_vtex_api(url, 'www.drovenort.com.ar')
-    return precio, desc
+    try:
+        page.goto(url, timeout=30000)
+        page.wait_for_load_state('networkidle', timeout=15000)
+        elemento = page.query_selector('.text-no-wrap.mr-2.price')
+        if elemento:
+            texto = elemento.inner_text().strip()
+            return limpiar_precio(texto), None
+    except Exception as e:
+        print(f"  Error: {e}")
+    return None, None
 
 def obtener_ultimo_precio(producto_id, tienda):
     conn = get_conn()
