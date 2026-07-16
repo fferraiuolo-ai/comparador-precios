@@ -68,6 +68,28 @@
             .tabla-desktop { display: none; }
             .cards { display: block; }
         }
+
+        /* === ESTILOS DE IMPRESION / PDF === */
+        @media print {
+            @page { margin: 1cm; }
+            body { background: white; margin: 0; font-size: 11px; }
+            .header .btn, .btn-verde, .btn-rojo, .btn-naranja, .btn-pdf { display: none !important; }
+            .alerta-error { display: none; }
+            .cards { display: none !important; }
+            .tabla-desktop { display: table !important; font-size: 10px; margin-bottom: 14px; }
+            .tabla-desktop th { background: #0066cc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .fila-proveedor td { background: #e8f0fe !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .modal-overlay { display: none !important; }
+            .print-header { display: block !important; }
+            .print-footer { display: block !important; }
+            a { color: inherit !important; text-decoration: none !important; }
+            .proveedor-link { pointer-events: none; }
+            thead { display: table-header-group; }
+        }
+        .print-header { display: none; border-bottom: 2px solid #0066cc; padding-bottom: 10px; margin-bottom: 14px; }
+        .print-header h2 { margin: 0; color: #0066cc; font-size: 16px; }
+        .print-header p { margin: 4px 0 0; color: #666; font-size: 11px; }
+        .print-footer { display: none; margin-top: 16px; font-size: 10px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 8px; }
     </style>
 </head>
 <body>
@@ -82,6 +104,7 @@
     <div class="header">
         <h1>Comparador de Precios</h1>
         <div>
+            <button onclick="descargarPDF()" class="btn btn-pdf" style="background:#6f42c1;">⬇ PDF</button>
             {% if usuario %}
                 <a href="/agregar" class="btn">+ Agregar</a>
                 <a href="/scraping" class="btn btn-verde" onclick="alert('Scraping iniciado, puede tardar unos minutos...')">Actualizar</a>
@@ -90,6 +113,12 @@
                 <a href="/login" class="btn">Iniciar sesión</a>
             {% endif %}
         </div>
+    </div>
+
+    <!-- Encabezado visible solo en PDF -->
+    <div class="print-header">
+        <h2>Comparador de Precios — Puppis</h2>
+        <p id="print-fecha"></p>
     </div>
 
     {% if productos %}
@@ -252,9 +281,20 @@
         </div>
     </div>
 
+
     <script>
     var promedios = {{ promedios_proveedor | tojson }};
     var productos = {{ productos | tojson }};
+
+    function descargarPDF() {
+        var ahora = new Date();
+        var fecha = ahora.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric' });
+        var hora = ahora.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+        var texto = 'Actualizado al ' + fecha + ' a las ' + hora + 'hs';
+        document.getElementById('print-fecha').innerText = texto;
+        document.getElementById('print-fecha-footer').innerText = fecha + ' ' + hora + 'hs';
+        window.print();
+    }
 
     function fmt(n) {
         if (n === null || n === undefined) return '-';
