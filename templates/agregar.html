@@ -21,12 +21,29 @@
     <div class="form-container">
         <form method="POST">
             <label>Proveedor</label>
-            <select name="proveedor" required>
+            <select name="proveedor" id="select-proveedor" onchange="toggleNuevoProveedor()" required>
                 <option value="">-- Seleccioná un proveedor --</option>
                 {% for p in proveedores %}
                 <option value="{{ p }}">{{ p }}</option>
                 {% endfor %}
+                <option value="__nuevo__">+ Agregar nuevo proveedor...</option>
             </select>
+            <input type="text" id="input-nuevo-proveedor" name="nuevo_proveedor" placeholder="Escribí el nombre del proveedor" style="display:none; margin-top:8px;">
+            <script>
+            function toggleNuevoProveedor() {
+                var sel = document.getElementById('select-proveedor');
+                var inp = document.getElementById('input-nuevo-proveedor');
+                if (sel.value === '__nuevo__') {
+                    inp.style.display = 'block';
+                    inp.required = true;
+                    sel.required = false;
+                } else {
+                    inp.style.display = 'none';
+                    inp.required = false;
+                    sel.required = true;
+                }
+            }
+            </script>
 
             <label>Nombre del producto</label>
             <input type="text" name="nombre" placeholder="Ej: Royal Canin Adulto 15kg" required>

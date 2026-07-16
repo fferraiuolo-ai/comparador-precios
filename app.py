@@ -144,6 +144,7 @@ def producto(id):
 @login_requerido
 def agregar():
     if request.method == 'POST':
+        proveedor = request.form.get('nuevo_proveedor', '').strip() if request.form.get('proveedor') == '__nuevo__' else request.form['proveedor']
         conn = get_conn()
         c = conn.cursor()
         c.execute('''
@@ -157,7 +158,7 @@ def agregar():
             request.form['url_drovenort'],
             request.form['variante_nutrican'],
             request.form['url_kangoopet'],
-            request.form['proveedor'],
+            proveedor,
         ))
         nuevo_id = c.fetchone()[0]
         conn.commit()
@@ -181,6 +182,7 @@ def agregar():
 @login_requerido
 def editar(id):
     if request.method == 'POST':
+        proveedor = request.form.get('nuevo_proveedor', '').strip() if request.form.get('proveedor') == '__nuevo__' else request.form['proveedor']
         execute_db('''
             UPDATE productos SET nombre=%s, url_puppis=%s, url_naturallife=%s, url_nutrican=%s, url_drovenort=%s, variante_nutrican=%s, url_kangoopet=%s, proveedor=%s
             WHERE id=%s
@@ -192,7 +194,7 @@ def editar(id):
             request.form['url_drovenort'],
             request.form['variante_nutrican'],
             request.form['url_kangoopet'],
-            request.form['proveedor'],
+            proveedor,
             id,
         ))
         return redirect(url_for('index'))
